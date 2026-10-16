@@ -1,0 +1,13 @@
+{
+  "name": "com.void.leyline",
+  "version": "1.0.0",
+  "description": "VOID - a tiny interactive leyline animation test for Xiaomi Band 9 Pro",
+  "scripts": {
+    "build": "aiot build",
+    "release": "aiot release"
+  },
+  "devDependencies": {
+    "aiot-toolkit": "^2.0.5"
+  },
+  "license": "MIT"
+}

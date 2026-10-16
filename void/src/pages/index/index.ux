@@ -1,0 +1,181 @@
+<template>
+  <div class="root" onclick="onTap">
+    <text if="{{showHint}}" class="hint">点击</text>
+    <div class="fx" style="opacity: {{layerOp}};">
+      <div for="{{dots}}" class="dot" style="left: {{$item.x}}px; top: {{$item.y}}px; width: {{$item.s}}px; height: {{$item.s}}px; background-color: {{$item.c}};"></div>
+    </div>
+  </div>
+</template>
+
+<style>
+  .root {
+    width: 336px;
+    height: 480px;
+    background-color: #000000;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .hint {
+    color: #8ce05a;
+    font-size: 22px;
+    animation-name: hintPulse;
+    animation-duration: 1.8s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
+  @keyframes hintPulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+  }
+  .fx {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 336px;
+    height: 480px;
+    transition-property: opacity;
+    transition-duration: 450ms;
+    transition-timing-function: ease-out;
+  }
+  .dot {
+    position: absolute;
+    border-radius: 100px;
+  }
+</style>
+
+<script>
+  import vibrator from '@system.vibrator';
+
+  export default {
+    private: {
+      showHint: true,
+      dots: [],
+      layerOp: 1
+    },
+    onInit() {},
+    onHide() {
+      this.resetAll();
+    },
+    onDestroy() {
+      this.resetAll();
+    },
+    resetAll() {
+      try {
+        if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+        if (this._fadeTimer) { clearTimeout(this._fadeTimer); this._fadeTimer = null; }
+        this._playing = false;
+        this.dots = [];
+        this.layerOp = 1;
+      } catch (e) {}
+    },
+    onTap(e) {
+      try {
+        if (this._playing) { return; }
+        this.showHint = false;
+        let x = 168;
+        let y = 240;
+        if (e && typeof e.clientX === 'number') { x = e.clientX; }
+        if (e && typeof e.clientY === 'number') { y = e.clientY; }
+        const plan = this.buildPlan(x, y);
+        if (!plan || plan.length === 0) { return; }
+        try { vibrator.vibrate({ mode: 'short' }); } catch (err) {}
+        this._playing = true;
+        this.dots = [];
+        const total = plan.length;
+        const dur = 1200 + Math.floor(Math.random() * 600);
+        const interval = Math.max(30, Math.round(dur / total));
+        let i = 0;
+        const that = this;
+        const step = function () {
+          try {
+            if (i >= total) {
+              that._timer = null;
+              that.startFade();
+              return;
+            }
+            i += 1;
+            that.dots = plan.slice(0, i);
+            that._timer = setTimeout(step, interval);
+          } catch (err) {
+            that.resetAll();
+          }
+        };
+        this._timer = setTimeout(step, interval);
+      } catch (e) {}
+    },
+    startFade() {
+      try {
+        this.layerOp = 0;
+        const that = this;
+        this._fadeTimer = setTimeout(function () {
+          that.dots = [];
+          that.layerOp = 1;
+          that._playing = false;
+        }, 520);
+      } catch (e) {
+        this.resetAll();
+      }
+    },
+    buildPlan(x, y) {
+      const out = [];
+      try {
+        const rnd = function (a, b) { return a + Math.random() * (b - a); };
+        const palette = ['#8CE05A', '#9BE15D', '#7DD64F', '#B4F07E', '#6FCF97'];
+        const col = palette[Math.floor(Math.random() * palette.length)];
+        const col2 = palette[Math.floor(Math.random() * palette.length)];
+        let sx = x;
+        let sy = y;
+        if (sx < 6) { sx = 6; }
+        if (sx > 330) { sx = 330; }
+        if (sy < 6) { sy = 6; }
+        if (sy > 474) { sy = 474; }
+        out.push({ x: Math.round(sx), y: Math.round(sy), s: 7, c: col });
+        let ang = Math.random() * Math.PI * 2;
+        let cx = sx;
+        let cy = sy;
+        const mainSteps = 10 + Math.floor(Math.random() * 6);
+        const path = [];
+        for (let k = 0; k < mainSteps; k++) {
+          ang += rnd(-0.28, 0.28);
+          cx += Math.cos(ang) * 7;
+          cy += Math.sin(ang) * 7;
+          if (cx < 6) { cx = 6; }
+          if (cx > 330) { cx = 330; }
+          if (cy < 6) { cy = 6; }
+          if (cy > 474) { cy = 474; }
+          const t = k / mainSteps;
+          const size = rnd(6, 9) - t * 3.2;
+          out.push({ x: Math.round(cx), y: Math.round(cy), s: Math.round(size), c: col });
+          path.push({ x: cx, y: cy, ang: ang });
+        }
+        out.push({ x: Math.round(path[path.length - 1].x + Math.cos(ang) * 6), y: Math.round(path[path.length - 1].y + Math.sin(ang) * 6), s: 9, c: col2 });
+        const bcount = 1 + (Math.random() < 0.6 ? 1 : 0);
+        for (let b = 0; b < bcount; b++) {
+          const si = 3 + Math.floor(Math.random() * (mainSteps - 5));
+          const sp = path[si];
+          let bang = sp.ang + (Math.random() < 0.5 ? -1 : 1) * rnd(0.7, 1.15);
+          let bx = sp.x;
+          let by = sp.y;
+          const bSteps = 4 + Math.floor(Math.random() * 4);
+          for (let j = 0; j < bSteps; j++) {
+            bang += rnd(-0.22, 0.22);
+            bx += Math.cos(bang) * 6;
+            by += Math.sin(bang) * 6;
+            if (bx < 6) { bx = 6; }
+            if (bx > 330) { bx = 330; }
+            if (by < 6) { by = 6; }
+            if (by > 474) { by = 474; }
+            const size2 = rnd(4, 6.5) - j * 0.5;
+            out.push({ x: Math.round(bx), y: Math.round(by), s: Math.round(size2), c: col2 });
+          }
+        }
+      } catch (e) {
+        return out;
+      }
+      return out;
+    }
+  };
+</script>

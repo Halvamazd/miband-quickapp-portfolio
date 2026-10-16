@@ -1,0 +1,10 @@
+<script>
+export default {
+  onCreate() {
+    console.log('[VOID] onCreate');
+  },
+  onDestroy() {
+    console.log('[VOID] onDestroy');
+  }
+};
+</script>
