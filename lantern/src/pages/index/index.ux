@@ -1,0 +1,217 @@
+<template>
+  <div class="root" style="background-color: {{bgColor}};" onclick="onTap">
+    <div if="{{ballOn}}" class="ball" style="left: {{bx}}px; top: {{by}}px; width: {{bw}}px; height: {{bw}}px; background-color: {{ballColor}};"></div>
+    <text if="{{showHint}}" class="hint">点击</text>
+  </div>
+</template>
+
+<style>
+  .root {
+    width: 336px;
+    height: 480px;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ball {
+    position: absolute;
+    border-radius: 50%;
+  }
+  .hint {
+    color: #ffffff;
+    font-size: 15px;
+    animation-name: hintPulse;
+    animation-duration: 2.4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
+  @keyframes hintPulse {
+    0% { opacity: 0.35; }
+    50% { opacity: 1; }
+    100% { opacity: 0.35; }
+  }
+</style>
+
+<script>
+  import vibrator from '@system.vibrator';
+
+  var ENTER_MS = 200;
+  var PAUSE_MS = 500;
+  var GROW_MS = 900;
+  var START_R = 9;
+  var STEP_MS = 20;
+  var SCREEN_W = 336;
+  var SCREEN_H = 480;
+
+  function bezierCoord(t, p1, p2) {
+    var mt = 1 - t;
+    return 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t;
+  }
+
+  function cubicBezier(x1, y1, x2, y2) {
+    return function (x) {
+      if (x <= 0) { return 0; }
+      if (x >= 1) { return 1; }
+      var lo = 0;
+      var hi = 1;
+      var t = 0.5;
+      for (var i = 0; i < 18; i++) {
+        t = (lo + hi) * 0.5;
+        if (bezierCoord(t, x1, x2) < x) { lo = t; } else { hi = t; }
+      }
+      return bezierCoord(t, y1, y2);
+    };
+  }
+
+  var easeGrow = cubicBezier(0.32, 0.72, 0, 1);
+
+  function easeEnter(t) {
+    var c1 = 1.70158;
+    var c3 = c1 + 1;
+    var u = t - 1;
+    return 1 + c3 * u * u * u + c1 * u * u;
+  }
+
+  function dist(dx, dy) {
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function hex2(n) {
+    var s = n.toString(16);
+    if (s.length < 2) { s = '0' + s; }
+    return s;
+  }
+
+  function hslToRgb(h, s, l) {
+    h = h % 360;
+    if (h < 0) { h += 360; }
+    s = s / 100;
+    l = l / 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2;
+    var r = 0;
+    var g = 0;
+    var b = 0;
+    if (h < 60) { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    var R = Math.round((r + m) * 255);
+    var G = Math.round((g + m) * 255);
+    var B = Math.round((b + m) * 255);
+    return '#' + hex2(R) + hex2(G) + hex2(B);
+  }
+
+  export default {
+    private: {
+      bgColor: '#000000',
+      showHint: true,
+      ballOn: false,
+      bx: 0,
+      by: 0,
+      bw: 0,
+      ballColor: '#ffd166'
+    },
+    onInit() {},
+    onHide() {
+      this.finishNow();
+    },
+    onDestroy() {
+      this.finishNow();
+    },
+    finishNow() {
+      try {
+        if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+        if (this._anim && this._anim.state === 'grow') {
+          this.bgColor = this._anim.color;
+        }
+        this._anim = null;
+        this._playing = false;
+        this.ballOn = false;
+      } catch (e) {}
+    },
+    onTap(e) {
+      try {
+        if (this._playing) { return; }
+        this.showHint = false;
+        var x = 168;
+        var y = 240;
+        if (e && typeof e.clientX === 'number') { x = e.clientX; }
+        if (e && typeof e.clientY === 'number') { y = e.clientY; }
+        try { vibrator.vibrate({ mode: 'short' }); } catch (err) {}
+        var rMax = Math.max(
+          dist(x, y),
+          dist(SCREEN_W - x, y),
+          dist(x, SCREEN_H - y),
+          dist(SCREEN_W - x, SCREEN_H - y)
+        ) + 3;
+        if (!this._hue) { this._hue = Math.random() * 360; }
+        this._hue = (this._hue + 137.5 + Math.random() * 40) % 360;
+        var color = hslToRgb(this._hue, 90, 57);
+        this.ballColor = color;
+        this.bx = x - START_R;
+        this.by = y - START_R;
+        this.bw = START_R * 2;
+        this.ballOn = true;
+        this._anim = {
+          x: x,
+          y: y,
+          r: START_R,
+          rMax: rMax,
+          color: color,
+          state: 'enter',
+          t0: Date.now()
+        };
+        this._playing = true;
+        var that = this;
+        var step = function () {
+          try {
+            var a = that._anim;
+            if (!a) { return; }
+            var now = Date.now();
+            var t = now - a.t0;
+            if (a.state === 'enter') {
+              var p1 = t / ENTER_MS;
+              if (p1 > 1) { p1 = 1; }
+              a.r = START_R * easeEnter(p1);
+              if (p1 >= 1) {
+                a.state = 'pause';
+                a.t0 = now;
+              }
+            } else if (a.state === 'pause') {
+              a.r = START_R;
+              if (t >= PAUSE_MS) {
+                a.state = 'grow';
+                a.t0 = now;
+              }
+            } else if (a.state === 'grow') {
+              var p2 = t / GROW_MS;
+              if (p2 > 1) { p2 = 1; }
+              var eased = easeGrow(p2);
+              a.r = START_R + (a.rMax - START_R) * eased;
+              if (p2 >= 1) {
+                that.bgColor = a.color;
+                that.ballOn = false;
+                that._anim = null;
+                that._playing = false;
+                that._timer = null;
+                return;
+              }
+            }
+            that.bw = a.r * 2;
+            that.bx = a.x - a.r;
+            that.by = a.y - a.r;
+            that._timer = setTimeout(step, STEP_MS);
+          } catch (err2) {
+            that.finishNow();
+          }
+        };
+        this._timer = setTimeout(step, 0);
+      } catch (err3) {}
+    }
+  };
+</script>

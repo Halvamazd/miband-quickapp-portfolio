@@ -1,0 +1,10 @@
+<script>
+export default {
+  onCreate() {
+    console.log('[Lantern] onCreate');
+  },
+  onDestroy() {
+    console.log('[Lantern] onDestroy');
+  }
+};
+</script>
