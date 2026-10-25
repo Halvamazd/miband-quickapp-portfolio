@@ -1,21 +1,27 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
-    <div class="titleBar" style="left: {{titleX}}px; top: 52px;">
+    <div class="titleBar" style="left: {{titleX}}px; top: 44px;">
       <div class="titleInner"><text class="title">设置</text></div>
     </div>
-    <div class="row" style="left: {{x0}}px; top: 132px;" onclick="goColor">
+    <div class="row" style="left: {{x0}}px; top: 108px;" onclick="goColor">
       <div class="rowInner"><text class="rowLabel">自定义颜色</text><text class="rowArrow">›</text></div>
     </div>
-    <div class="row" style="left: {{x1}}px; top: 206px;" onclick="goBright">
+    <div class="row" style="left: {{x1}}px; top: 172px;" onclick="toggleLock">
+      <div class="rowInner">
+        <text class="rowLabel">锁定当前颜色</text>
+        <div class="track" style="background-color: {{lockBg}};"><div class="dot" style="left: {{lockDotX}}px;"></div></div>
+      </div>
+    </div>
+    <div class="row" style="left: {{x2}}px; top: 236px;" onclick="goBright">
       <div class="rowInner"><text class="rowLabel">屏幕亮度</text><text class="rowArrow">›</text></div>
     </div>
-    <div class="row" style="left: {{x2}}px; top: 280px;" onclick="toggleKeep">
+    <div class="row" style="left: {{x3}}px; top: 300px;" onclick="toggleKeep">
       <div class="rowInner">
         <text class="rowLabel">屏幕常亮</text>
         <div class="track" style="background-color: {{swBg}};"><div class="dot" style="left: {{swDotX}}px;"></div></div>
       </div>
     </div>
-    <div class="row" style="left: {{x3}}px; top: 354px;" onclick="goAbout">
+    <div class="row" style="left: {{x4}}px; top: 364px;" onclick="goAbout">
       <div class="rowInner"><text class="rowLabel">关于</text><text class="rowArrow">›</text></div>
     </div>
     <text if="{{msg}}" class="msg">{{msg}}</text>
@@ -32,11 +38,11 @@
   .titleBar {
     position: absolute;
     width: 336px;
-    height: 48px;
+    height: 44px;
   }
   .titleInner {
     width: 336px;
-    height: 48px;
+    height: 44px;
     align-items: center;
     justify-content: center;
   }
@@ -47,24 +53,24 @@
   .row {
     position: absolute;
     width: 336px;
-    height: 64px;
+    height: 58px;
     align-items: center;
     justify-content: center;
   }
   .rowInner {
     width: 292px;
-    height: 64px;
+    height: 58px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
   .rowLabel {
     color: #ffffff;
-    font-size: 24px;
+    font-size: 23px;
   }
   .rowArrow {
     color: #9a9a9a;
-    font-size: 30px;
+    font-size: 28px;
   }
   .track {
     position: relative;
@@ -83,7 +89,7 @@
   .msg {
     position: absolute;
     left: 0;
-    top: 430px;
+    top: 432px;
     width: 336px;
     text-align: center;
     color: #ff6b6b;
@@ -94,10 +100,28 @@
 <script>
   import router from '@system.router';
   import brightness from '@system.brightness';
+  import storage from '@system.storage';
 
   function easeOut(t) {
     var u = 1 - t;
     return 1 - u * u * u;
+  }
+
+  function getPref(key, def, cb) {
+    try {
+      storage.get({
+        key: key,
+        success: function (res) {
+          var v = res && res.data;
+          cb((v === undefined || v === null || v === '') ? def : v);
+        },
+        fail: function () { cb(def); }
+      });
+    } catch (e) { cb(def); }
+  }
+
+  function setPref(key, val) {
+    try { storage.set({ key: key, value: val, success: function () {}, fail: function () {} }); } catch (e) {}
   }
 
   export default {
@@ -107,6 +131,10 @@
       x1: 336,
       x2: 336,
       x3: 336,
+      x4: 336,
+      lockOn: false,
+      lockBg: '#4A4A4A',
+      lockDotX: 3,
       keepOn: true,
       swBg: '#34C759',
       swDotX: 35,
@@ -117,45 +145,35 @@
       this._sy = 0;
       this._nav = false;
       this._leaving = false;
+      this.keepOn = true;
+      this.swBg = '#34C759';
+      this.swDotX = 35;
       var that = this;
       setTimeout(function () { that.startList(); }, 30);
-      this.defaultKeepOn();
+      this.loadPrefs();
     },
     onShow() {
       this._nav = false;
       this._leaving = false;
+      this.loadPrefs();
     },
-    onDestroy() {
-      this.keepOff();
-      this.clearTimers();
-    },
-    clearTimers() {
-      try {
-        if (this._listT) { clearTimeout(this._listT); this._listT = null; }
-        if (this._backT) { clearTimeout(this._backT); this._backT = null; }
-      } catch (e) {}
-    },
-    defaultKeepOn() {
+    loadPrefs() {
       var that = this;
-      try {
-        brightness.setKeepScreenOn({
-          keepScreenOn: true,
-          success: function () {
-            that.keepOn = true;
-            that.swBg = '#34C759';
-            that.swDotX = 35;
-          },
-          fail: function () {
-            that.keepOn = false;
-            that.swBg = '#4A4A4A';
-            that.swDotX = 3;
-          }
-        });
-      } catch (e) {
-        this.keepOn = false;
-        this.swBg = '#4A4A4A';
-        this.swDotX = 3;
-      }
+      getPref('lockColor', '0', function (v) {
+        var on = (v === '1' || v === 1 || v === true);
+        that.lockOn = on;
+        that.lockBg = on ? '#34C759' : '#4A4A4A';
+        that.lockDotX = on ? 35 : 3;
+      });
+      getPref('keepOn', '1', function (v) {
+        var on = (v === '1' || v === 1 || v === true);
+        that.keepOn = on;
+        that.swBg = on ? '#34C759' : '#4A4A4A';
+        that.swDotX = on ? 35 : 3;
+        if (on) {
+          try { brightness.setKeepScreenOn({ keepScreenOn: true, success: function () {}, fail: function () {} }); } catch (e) {}
+        }
+      });
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
@@ -185,6 +203,7 @@
       this.x1 = 336;
       this.x2 = 336;
       this.x3 = 336;
+      this.x4 = 336;
       var t0 = Date.now();
       var step = function () {
         try {
@@ -194,8 +213,8 @@
           if (tp > 1) { tp = 1; }
           that.titleX = -336 * (1 - easeOut(tp));
           if (tp < 1) { all = false; }
-          var starts = [140, 210, 280, 350];
-          for (var i = 0; i < 4; i++) {
+          var starts = [140, 200, 260, 320, 380];
+          for (var i = 0; i < 5; i++) {
             var p = (t - starts[i]) / 280;
             if (p < 0) { p = 0; }
             if (p > 1) { p = 1; }
@@ -204,6 +223,7 @@
             if (i === 1) { that.x1 = x; }
             if (i === 2) { that.x2 = x; }
             if (i === 3) { that.x3 = x; }
+            if (i === 4) { that.x4 = x; }
             if (p < 1) { all = false; }
           }
           if (!all) { that._listT = setTimeout(step, 16); }
@@ -218,8 +238,7 @@
       var t0 = Date.now();
       var step = function () {
         try {
-          var t = Date.now() - t0;
-          var p = t / 280;
+          var p = (Date.now() - t0) / 280;
           if (p > 1) { p = 1; }
           var e = easeOut(p);
           that.titleX = -336 * e;
@@ -227,6 +246,7 @@
           that.x1 = 336 * e;
           that.x2 = 336 * e;
           that.x3 = 336 * e;
+          that.x4 = 336 * e;
           if (p < 1) {
             that._backT = setTimeout(step, 16);
           } else {
@@ -253,6 +273,13 @@
       this._nav = true;
       router.push({ uri: '/pages/about' });
     },
+    toggleLock() {
+      var target = !this.lockOn;
+      this.lockOn = target;
+      this.lockBg = target ? '#34C759' : '#4A4A4A';
+      this.lockDotX = target ? 35 : 3;
+      setPref('lockColor', target ? '1' : '0');
+    },
     toggleKeep() {
       var that = this;
       var target = !this.keepOn;
@@ -263,6 +290,7 @@
             that.keepOn = target;
             that.swBg = target ? '#34C759' : '#4A4A4A';
             that.swDotX = target ? 35 : 3;
+            setPref('keepOn', target ? '1' : '0');
             that.msg = '';
           },
           fail: function () {
@@ -272,13 +300,6 @@
       } catch (e) {
         this.msg = '常亮接口不可用';
       }
-    },
-    keepOff() {
-      if (!this.keepOn) { return; }
-      this.keepOn = false;
-      try {
-        brightness.setKeepScreenOn({ keepScreenOn: false, success: function () {}, fail: function () {} });
-      } catch (e) {}
     }
   };
 </script>

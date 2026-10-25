@@ -1,21 +1,22 @@
 {
   "package": "com.halvamazd.lantern2",
   "name": "彩灯",
-  "versionName": "1.5.3",
-  "versionCode": 9,
+  "versionName": "1.6.0",
+  "versionCode": 10,
   "minPlatformVersion": 1000,
   "icon": "/common/images/logo.png",
   "deviceTypeList": ["watch"],
   "features": [
     { "name": "system.vibrator" },
     { "name": "system.brightness" },
-    { "name": "system.router" }
+    { "name": "system.router" },
+    { "name": "system.storage" }
   ],
   "config": { "logLevel": "log", "designWidth": 336 },
   "router": {
     "entry": "pages/index",
     "pages": {
-      "pages/index": { "component": "index" },
+      "pages/index": { "component": "index", "launchMode": "singleTask" },
       "pages/settings": { "component": "settings", "launchMode": "singleTask" },
       "pages/brightness": { "component": "brightness", "launchMode": "singleTask" },
       "pages/about": { "component": "about", "launchMode": "singleTask" },

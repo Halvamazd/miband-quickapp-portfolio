@@ -1,9 +1,12 @@
 <template>
-  <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
+  <div class="root" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
     <div class="wrap" style="left: {{shift}}px;">
       <text class="title">自定义颜色</text>
-      <text class="big">敬请期待</text>
-      <text class="note">下个版本开发中</text>
+      <image class="wheel" src="/common/images/wheel.png"></image>
+      <div class="preview" style="background-color: {{color}};"></div>
+      <div class="thumb" style="left: {{tx}}px; top: {{ty}}px;"></div>
+      <div class="btn cancel" onclick="cancel"><text class="btnText">取消</text></div>
+      <div class="btn confirm" onclick="confirm"><text class="btnText confirmText">确认</text></div>
     </div>
   </div>
 </template>
@@ -25,59 +28,144 @@
   .title {
     position: absolute;
     left: 0;
-    top: 40px;
+    top: 28px;
     width: 336px;
     text-align: center;
     color: #ffffff;
     font-size: 24px;
   }
-  .big {
+  .wheel {
     position: absolute;
-    left: 0;
-    top: 180px;
-    width: 336px;
-    text-align: center;
-    color: #FFD166;
-    font-size: 32px;
+    left: 38px;
+    top: 86px;
+    width: 260px;
+    height: 260px;
   }
-  .note {
+  .preview {
     position: absolute;
-    left: 0;
-    top: 250px;
-    width: 336px;
-    text-align: center;
-    color: #8a8a8a;
-    font-size: 16px;
+    left: 138px;
+    top: 186px;
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+  }
+  .thumb {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    background-color: #ffffff;
+  }
+  .btn {
+    position: absolute;
+    top: 384px;
+    height: 50px;
+    border-radius: 25px;
+    align-items: center;
+    justify-content: center;
+  }
+  .cancel {
+    left: 40px;
+    width: 112px;
+    background-color: #3a3a3a;
+  }
+  .confirm {
+    left: 184px;
+    width: 112px;
+    background-color: #FFD166;
+  }
+  .btnText {
+    color: #ffffff;
+    font-size: 20px;
+  }
+  .confirmText {
+    color: #101010;
   }
 </style>
 
 <script>
   import router from '@system.router';
+  import storage from '@system.storage';
+
+  var CX = 168;
+  var CY = 216;
+  var RING = 130;
 
   function easeOut(t) {
     var u = 1 - t;
     return 1 - u * u * u;
   }
 
+  function hex2(n) {
+    var s = n.toString(16);
+    if (s.length < 2) { s = '0' + s; }
+    return s;
+  }
+
+  function hsl(h, s, l) {
+    h = h % 360;
+    if (h < 0) { h += 360; }
+    s = s / 100;
+    l = l / 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2;
+    var r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    return '#' + hex2(Math.round((r + m) * 255)) + hex2(Math.round((g + m) * 255)) + hex2(Math.round((b + m) * 255));
+  }
+
   export default {
     private: {
-      shift: 336
+      shift: 336,
+      hue: 0,
+      color: '#ffd166',
+      tx: 168,
+      ty: 216
     },
     onInit() {
       this._sx = 0;
       this._sy = 0;
+      this._drag = false;
       this._leaving = false;
       var that = this;
       setTimeout(function () {
-        var t0 = Date.now();
-        var step = function () {
-          var p = (Date.now() - t0) / 300;
-          if (p > 1) { p = 1; }
-          that.shift = 336 * (1 - easeOut(p));
-          if (p < 1) { that._inT = setTimeout(step, 16); }
-        };
-        step();
+        that.slideIn();
+        that.loadHue();
       }, 30);
+    },
+    loadHue() {
+      var that = this;
+      try {
+        storage.get({
+          key: 'lastHue',
+          success: function (res) {
+            var v = parseFloat(res && res.data);
+            if (!isNaN(v)) {
+              that.setHue(v);
+            } else {
+              that.setHue(0);
+            }
+          },
+          fail: function () { that.setHue(0); }
+        });
+      } catch (e) { this.setHue(0); }
+    },
+    slideIn() {
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        var p = (Date.now() - t0) / 300;
+        if (p > 1) { p = 1; }
+        that.shift = 336 * (1 - easeOut(p));
+        if (p < 1) { that._inT = setTimeout(step, 16); }
+      };
+      step();
     },
     onDestroy() {
       try {
@@ -85,18 +173,47 @@
         if (this._outT) { clearTimeout(this._outT); }
       } catch (e) {}
     },
+    setHue(h) {
+      h = h % 360;
+      if (h < 0) { h += 360; }
+      this.hue = h;
+      this.color = hsl(h, 90, 57);
+      var rad = h * Math.PI / 180;
+      this.tx = CX + Math.cos(rad) * RING - 11;
+      this.ty = CY + Math.sin(rad) * RING - 11;
+    },
     onTouchStart(e) {
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;
+      var dx = p.clientX - CX;
+      var dy = p.clientY - CY;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d >= RING - 40 && d <= RING + 30) {
+        this._drag = true;
+        this.pick(p.clientX, p.clientY);
+      }
+    },
+    onTouchMove(e) {
+      if (!this._drag) { return; }
+      var p = this.getPoint(e);
+      this.pick(p.clientX, p.clientY);
     },
     onTouchEnd(e) {
+      if (this._drag) { this._drag = false; return; }
       var p = this.getPoint(e);
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
-      if (dx > 65 && dy < 90) {
-        this.backAnimated();
-      }
+      if (dx > 65 && dy < 90) { this.cancel(); }
+    },
+    pick(x, y) {
+      var dx = x - CX;
+      var dy = y - CY;
+      var deg = Math.atan2(dy, dx) * 180 / Math.PI;
+      this.setHue(deg);
+      try {
+        storage.set({ key: 'lastHue', value: String(this.hue), success: function () {}, fail: function () {} });
+      } catch (e) {}
     },
     getPoint(e) {
       try {
@@ -106,26 +223,32 @@
       } catch (err) {}
       return { clientX: 168, clientY: 240 };
     },
-    backAnimated() {
+    cancel() {
       if (this._leaving) { return; }
       this._leaving = true;
       var that = this;
       var t0 = Date.now();
       var step = function () {
-        try {
-          var p = (Date.now() - t0) / 260;
-          if (p > 1) { p = 1; }
-          that.shift = 336 * easeOut(p);
-          if (p < 1) {
-            that._outT = setTimeout(step, 16);
-          } else {
-            router.back();
-          }
-        } catch (e) {
+        var p = (Date.now() - t0) / 260;
+        if (p > 1) { p = 1; }
+        that.shift = 336 * easeOut(p);
+        if (p < 1) {
+          that._outT = setTimeout(step, 16);
+        } else {
           router.back();
         }
       };
       step();
+    },
+    confirm() {
+      if (this._leaving) { return; }
+      this._leaving = true;
+      try {
+        storage.set({ key: 'pendingColor', value: this.color, success: function () {}, fail: function () {} });
+        storage.set({ key: 'pendingHue', value: String(this.hue), success: function () {}, fail: function () {} });
+        storage.set({ key: 'lastHue', value: String(this.hue), success: function () {}, fail: function () {} });
+      } catch (e) {}
+      router.push({ uri: '/pages/index' });
     }
   };
 </script>

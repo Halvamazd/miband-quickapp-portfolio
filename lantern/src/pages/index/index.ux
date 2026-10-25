@@ -21,7 +21,7 @@
   }
   .hint {
     color: #ffffff;
-    font-size: 18px;
+    font-size: 24px;
   }
   .mask {
     position: absolute;
@@ -33,6 +33,8 @@
 <script>
   import vibrator from '@system.vibrator';
   import router from '@system.router';
+  import brightness from '@system.brightness';
+  import storage from '@system.storage';
 
   var SCREEN_W = 336;
   var SCREEN_H = 480;
@@ -80,10 +82,20 @@
     else if (h < 240) { r = 0; g = x; b = c; }
     else if (h < 300) { r = x; g = 0; b = c; }
     else { r = c; g = 0; b = x; }
-    var R = Math.round((r + m) * 255);
-    var G = Math.round((g + m) * 255);
-    var B = Math.round((b + m) * 255);
-    return '#' + hex2(R) + hex2(G) + hex2(B);
+    return '#' + hex2(Math.round((r + m) * 255)) + hex2(Math.round((g + m) * 255)) + hex2(Math.round((b + m) * 255));
+  }
+
+  function getPref(key, def, cb) {
+    try {
+      storage.get({
+        key: key,
+        success: function (res) {
+          var v = res && res.data;
+          cb((v === undefined || v === null || v === '') ? def : v);
+        },
+        fail: function () { cb(def); }
+      });
+    } catch (e) { cb(def); }
   }
 
   export default {
@@ -106,6 +118,7 @@
       this._lastTap = 0;
       this._lpFired = false;
       this._moved = false;
+      this._lock = false;
     },
     onShow() {
       this._navLock = false;
@@ -114,12 +127,44 @@
       this._playing = false;
       this.ballOn = false;
       this.maskOn = false;
+      this.loadPrefs();
     },
     onHide() {
       this.finishNow();
+      this.keepOff();
     },
     onDestroy() {
       this.finishNow();
+      this.keepOff();
+    },
+    keepOff() {
+      try { brightness.setKeepScreenOn({ keepScreenOn: false, success: function () {}, fail: function () {} }); } catch (e) {}
+    },
+    loadPrefs() {
+      var that = this;
+      getPref('keepOn', '1', function (v) {
+        if (v === '1' || v === 1 || v === true) {
+          try { brightness.setKeepScreenOn({ keepScreenOn: true, success: function () {}, fail: function () {} }); } catch (e) {}
+        }
+      });
+      getPref('lockColor', '0', function (v) {
+        that._lock = (v === '1' || v === 1 || v === true);
+      });
+      getPref('pendingColor', '', function (v) {
+        if (typeof v === 'string' && v.length === 7 && v.charAt(0) === '#') {
+          getPref('pendingHue', '0', function (h) {
+            var hue = parseFloat(h) || 0;
+            try { storage.set({ key: 'pendingColor', value: '', success: function () {}, fail: function () {} }); } catch (e) {}
+            setTimeout(function () { that.arrive(v, hue); }, 60);
+          });
+        }
+      });
+    },
+    arrive(color, hue) {
+      var rad = hue * Math.PI / 180;
+      var x = 168 + Math.cos(rad) * 130;
+      var y = 216 + Math.sin(rad) * 130;
+      this.paint(x, y, color);
     },
     onTouchStart(e) {
       this.clearLp();
@@ -157,8 +202,10 @@
       var now = Date.now();
       if (now - this._lastTap < 250) { return; }
       this._lastTap = now;
+      try { vibrator.vibrate({ mode: 'short' }); } catch (v) {}
+      if (this._lock) { return; }
       var p = this.getPoint(e);
-      this.tap(p.clientX, p.clientY);
+      this.tap(p.clientX, p.clientY, '');
     },
     clearLp() {
       try {
@@ -170,23 +217,19 @@
       this._navLock = true;
       try { vibrator.vibrate({ mode: 'short' }); } catch (v) {}
       var that = this;
-      var lit = this.bgColor !== '#000000';
-      if (!lit) {
+      if (this.bgColor === '#000000') {
         router.push({ uri: '/pages/settings' });
         return;
       }
       var t0 = Date.now();
       this.maskOn = true;
-      var x0 = 0;
-      var y0 = SCREEN_H;
-      var rMax = 660;
       var stepMask = function () {
         try {
           var p = (Date.now() - t0) / MASK_MS;
           if (p > 1) { p = 1; }
-          var r = rMax * easeOut(p);
-          that.mx = x0 - r;
-          that.my = y0 - r;
+          var r = 660 * easeOut(p);
+          that.mx = -r;
+          that.my = SCREEN_H - r;
           that.mr2 = r * 2;
           if (p < 1) {
             that._maskT = setTimeout(stepMask, 16);
@@ -220,17 +263,29 @@
         this.ballOn = false;
       } catch (e) {}
     },
-    tap(x, y) {
+    tap(x, y, forced) {
       try {
         if (this._playing) { return; }
         this.showHint = false;
-        try { vibrator.vibrate({ mode: 'short' }); } catch (err) {}
-        var rMax = Math.min(Math.sqrt(
-          Math.max(x * x + y * y, (SCREEN_W - x) * (SCREEN_W - x) + y * y, x * x + (SCREEN_H - y) * (SCREEN_H - y), (SCREEN_W - x) * (SCREEN_W - x) + (SCREEN_H - y) * (SCREEN_H - y))
-        ) + 3, MAX_R);
-        if (!this._hue) { this._hue = Math.random() * 360; }
-        this._hue = (this._hue + 137.5 + Math.random() * 40) % 360;
-        var color = hslToRgb(this._hue, 90, 57);
+        var color = forced;
+        if (!color) {
+          if (!this._hue) { this._hue = Math.random() * 360; }
+          this._hue = (this._hue + 137.5 + Math.random() * 40) % 360;
+          color = hslToRgb(this._hue, 90, 57);
+        }
+        this.paint(x, y, color);
+      } catch (err3) {}
+    },
+    paint(x, y, color) {
+      try {
+        if (typeof x !== 'number') { x = 168; }
+        if (typeof y !== 'number') { y = 240; }
+        var rMax = Math.min(Math.sqrt(Math.max(
+          x * x + y * y,
+          (SCREEN_W - x) * (SCREEN_W - x) + y * y,
+          x * x + (SCREEN_H - y) * (SCREEN_H - y),
+          (SCREEN_W - x) * (SCREEN_W - x) + (SCREEN_H - y) * (SCREEN_H - y)
+        )) + 3, MAX_R);
         this.ballColor = color;
         this.bx = x - START_R;
         this.by = y - START_R;
@@ -243,16 +298,15 @@
           try {
             var a = that._anim;
             if (!a) { return; }
-            var now = Date.now();
-            var t = now - a.t0;
+            var t = Date.now() - a.t0;
             if (a.state === 'enter') {
               var p1 = t / ENTER_MS;
               if (p1 > 1) { p1 = 1; }
               a.r = START_R * easeEnter(p1);
-              if (p1 >= 1) { a.state = 'pause'; a.t0 = now; }
+              if (p1 >= 1) { a.state = 'pause'; a.t0 = Date.now(); }
             } else if (a.state === 'pause') {
               a.r = START_R;
-              if (t >= PAUSE_MS) { a.state = 'grow'; a.t0 = now; }
+              if (t >= PAUSE_MS) { a.state = 'grow'; a.t0 = Date.now(); }
             } else if (a.state === 'grow') {
               var p2 = t / GROW_MS;
               if (p2 > 1) { p2 = 1; }
@@ -275,7 +329,7 @@
           }
         };
         this._timer = setTimeout(step, 0);
-      } catch (err3) {}
+      } catch (e) {}
     }
   };
 </script>
