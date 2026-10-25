@@ -1,47 +1,26 @@
 {
   "package": "com.halvamazd.lantern2",
   "name": "彩灯",
-  "versionName": "1.5.1",
-  "versionCode": 7,
+  "versionName": "1.5.2",
+  "versionCode": 8,
   "minPlatformVersion": 1000,
   "icon": "/common/images/logo.png",
-  "deviceTypeList": [
-    "watch"
-  ],
+  "deviceTypeList": ["watch"],
   "features": [
     { "name": "system.vibrator" },
     { "name": "system.brightness" },
     { "name": "system.router" }
   ],
-  "config": {
-    "logLevel": "log",
-    "designWidth": 336
-  },
+  "config": { "logLevel": "log", "designWidth": 336 },
   "router": {
     "entry": "pages/index",
     "pages": {
-      "pages/index": {
-        "component": "index"
-      },
-      "pages/settings": {
-        "component": "settings",
-        "launchMode": "singleTask"
-      },
-      "pages/brightness": {
-        "component": "brightness",
-        "launchMode": "singleTask"
-      },
-      "pages/about": {
-        "component": "about",
-        "launchMode": "singleTask"
-      },
-      "pages/color": {
-        "component": "color",
-        "launchMode": "singleTask"
-      }
+      "pages/index": { "component": "index" },
+      "pages/settings": { "component": "settings", "launchMode": "singleTask" },
+      "pages/brightness": { "component": "brightness", "launchMode": "singleTask" },
+      "pages/about": { "component": "about", "launchMode": "singleTask" },
+      "pages/color": { "component": "color", "launchMode": "singleTask" }
     }
   },
-  "display": {
-    "backgroundColor": "#000000"
-  }
+  "display": { "backgroundColor": "#000000" }
 }

@@ -5,7 +5,13 @@
       <div class="barZone">
         <div class="bar">
           <div class="fill" style="height: {{fillH}}px;"></div>
-          <text class="sun">☀</text>
+          <div class="sun">
+            <div class="core"></div>
+            <div class="ray rayT"></div>
+            <div class="ray rayB"></div>
+            <div class="ray rayL"></div>
+            <div class="ray rayR"></div>
+          </div>
         </div>
       </div>
       <text if="{{msg}}" class="msg">{{msg}}</text>
@@ -63,11 +69,47 @@
   .sun {
     position: absolute;
     left: 0;
-    bottom: 12px;
+    bottom: 10px;
     width: 72px;
-    text-align: center;
-    color: #3a3a3a;
-    font-size: 24px;
+    height: 28px;
+  }
+  .core {
+    position: absolute;
+    left: 30px;
+    top: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #3a3a3a;
+  }
+  .ray {
+    position: absolute;
+    background-color: #3a3a3a;
+    border-radius: 1px;
+  }
+  .rayT {
+    left: 34px;
+    top: 0;
+    width: 3px;
+    height: 6px;
+  }
+  .rayB {
+    left: 34px;
+    bottom: 0;
+    width: 3px;
+    height: 6px;
+  }
+  .rayL {
+    left: 22px;
+    top: 13px;
+    width: 6px;
+    height: 3px;
+  }
+  .rayR {
+    right: 22px;
+    top: 13px;
+    width: 6px;
+    height: 3px;
   }
   .msg {
     position: absolute;
@@ -106,15 +148,40 @@
       this._leaving = false;
       var that = this;
       setTimeout(function () {
-        var t0 = Date.now();
-        var step = function () {
-          var p = (Date.now() - t0) / 300;
-          if (p > 1) { p = 1; }
-          that.shift = 336 * (1 - easeOut(p));
-          if (p < 1) { that._inT = setTimeout(step, 16); }
-        };
-        step();
+        that.slideIn();
+        that.readCurrent();
       }, 30);
+    },
+    slideIn() {
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        var p = (Date.now() - t0) / 300;
+        if (p > 1) { p = 1; }
+        that.shift = 336 * (1 - easeOut(p));
+        if (p < 1) { that._inT = setTimeout(step, 16); }
+      };
+      step();
+    },
+    readCurrent() {
+      var that = this;
+      try {
+        brightness.getValue({
+          success: function (res) {
+            try {
+              var v = res && res.value;
+              if (typeof v === 'number') {
+                v = Math.round(v);
+                if (v < 0) { v = 0; }
+                if (v > 255) { v = 255; }
+                that.val = v;
+                that.fillH = HEIGHT * v / 255;
+              }
+            } catch (e2) {}
+          },
+          fail: function () {}
+        });
+      } catch (e) {}
     },
     onDestroy() {
       try {
