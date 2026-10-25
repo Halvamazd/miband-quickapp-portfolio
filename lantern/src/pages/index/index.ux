@@ -34,7 +34,6 @@
   import vibrator from '@system.vibrator';
   import router from '@system.router';
   import brightness from '@system.brightness';
-  import state from '../../common/state.js';
 
   var SCREEN_W = 336;
   var SCREEN_H = 480;
@@ -104,6 +103,18 @@
       this._lpFired = false;
       this._moved = false;
       this._lock = false;
+      this._local = { lockColor: false, keepOn: true, pendingColor: '' };
+    },
+    getS() {
+      try {
+        var d = this.$app.$def.data;
+        if (!d.lantern) {
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+        }
+        return d.lantern;
+      } catch (e) {
+        return this._local;
+      }
     },
     onShow() {
       this._navLock = false;
@@ -112,14 +123,15 @@
       this._playing = false;
       this.ballOn = false;
       this.maskOn = false;
-      this._lock = state.lockColor;
+      var S = this.getS();
+      this._lock = S.lockColor;
       var that = this;
-      if (state.keepOn) {
+      if (S.keepOn) {
         try { brightness.setKeepScreenOn({ keepScreenOn: true, success: function () {}, fail: function () {} }); } catch (e) {}
       }
-      if (state.pendingColor) {
-        var c = state.pendingColor;
-        state.pendingColor = '';
+      if (S.pendingColor) {
+        var c = S.pendingColor;
+        S.pendingColor = '';
         setTimeout(function () { that.paint(168, 208, c); }, 60);
       }
     },
@@ -247,7 +259,7 @@
     paint(x, y, color) {
       try {
         if (typeof x !== 'number') { x = 168; }
-        if (typeof y !== 'number') { y = 216; }
+        if (typeof y !== 'number') { y = 208; }
         var rMax = Math.min(Math.sqrt(Math.max(
           x * x + y * y,
           (SCREEN_W - x) * (SCREEN_W - x) + y * y,

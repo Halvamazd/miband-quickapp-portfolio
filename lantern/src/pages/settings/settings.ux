@@ -100,7 +100,6 @@
 <script>
   import router from '@system.router';
   import brightness from '@system.brightness';
-  import state from '../../common/state.js';
 
   function easeOut(t) {
     var u = 1 - t;
@@ -124,8 +123,7 @@
       msg: ''
     },
     onInit() {
-      this._sx = 0;
-      this._sy = 0;
+      this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
       this._nav = false;
       this._leaving = false;
       this.syncState();
@@ -137,18 +135,29 @@
       this._leaving = false;
       this.syncState();
     },
+    getS() {
+      try {
+        var d = this.$app.$def.data;
+        if (!d.lantern) {
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+        }
+        return d.lantern;
+      } catch (e) {
+        return this._local;
+      }
+    },
     syncState() {
-      this.lockOn = state.lockColor;
-      this.lockBg = state.lockColor ? '#34C759' : '#4A4A4A';
-      this.lockDotX = state.lockColor ? 35 : 3;
-      this.keepOn = state.keepOn;
-      this.swBg = state.keepOn ? '#34C759' : '#4A4A4A';
-      this.swDotX = state.keepOn ? 35 : 3;
+      var S = this.getS();
+      this.lockOn = S.lockColor;
+      this.lockBg = S.lockColor ? '#34C759' : '#4A4A4A';
+      this.lockDotX = S.lockColor ? 35 : 3;
+      this.keepOn = S.keepOn;
+      this.swBg = S.keepOn ? '#34C759' : '#4A4A4A';
+      this.swDotX = S.keepOn ? 35 : 3;
     },
     onTouchStart(e) {
-      var p = this.getPoint(e);
-      this._sx = p.clientX;
-      this._sy = p.clientY;
+      this._sx = this.getPoint(e).clientX;
+      this._sy = this.getPoint(e).clientY;
     },
     onTouchEnd(e) {
       var p = this.getPoint(e);
@@ -244,17 +253,19 @@
       router.push({ uri: '/pages/about' });
     },
     toggleLock() {
-      state.lockColor = !state.lockColor;
+      var S = this.getS();
+      S.lockColor = !S.lockColor;
       this.syncState();
     },
     toggleKeep() {
       var that = this;
-      var target = !state.keepOn;
+      var S = this.getS();
+      var target = !S.keepOn;
       try {
         brightness.setKeepScreenOn({
           keepScreenOn: target,
           success: function () {
-            state.keepOn = target;
+            S.keepOn = target;
             that.syncState();
             that.msg = '';
           },

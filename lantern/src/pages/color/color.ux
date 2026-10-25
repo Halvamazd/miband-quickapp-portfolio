@@ -75,7 +75,6 @@
 <script>
   import router from '@system.router';
   import vibrator from '@system.vibrator';
-  import state from '../../common/state.js';
 
   var CX = 168;
   var CY = 208;
@@ -119,15 +118,25 @@
       ty: 208
     },
     onInit() {
-      this._sx = 0;
-      this._sy = 0;
+      this._local = { lastHue: 0, pendingColor: '' };
       this._drag = false;
       this._done = false;
       var that = this;
       setTimeout(function () {
         that.slideIn();
-        that.setHue(state.lastHue || 0);
+        that.setHue(that.getS().lastHue || 0);
       }, 30);
+    },
+    getS() {
+      try {
+        var d = this.$app.$def.data;
+        if (!d.lantern) {
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+        }
+        return d.lantern;
+      } catch (e) {
+        return this._local;
+      }
     },
     slideIn() {
       var that = this;
@@ -157,8 +166,6 @@
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
-      this._sx = p.clientX;
-      this._sy = p.clientY;
       var dx = p.clientX - CX;
       var dy = p.clientY - CY;
       var d = Math.sqrt(dx * dx + dy * dy);
@@ -173,14 +180,14 @@
       this.pick(p.clientX, p.clientY);
     },
     onTouchEnd() {
-      if (this._drag) { this._drag = false; }
+      this._drag = false;
     },
     pick(x, y) {
       var dx = x - CX;
       var dy = y - CY;
       var deg = Math.atan2(dy, dx) * 180 / Math.PI;
       this.setHue(deg);
-      state.lastHue = this.hue;
+      this.getS().lastHue = this.hue;
     },
     getPoint(e) {
       try {
@@ -211,7 +218,7 @@
       if (this._done) { return; }
       this._done = true;
       try { vibrator.vibrate({ mode: 'short' }); } catch (e) {}
-      state.pendingColor = this.color;
+      this.getS().pendingColor = this.color;
       router.push({ uri: '/pages/index' });
     }
   };

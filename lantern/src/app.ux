@@ -1,5 +1,13 @@
 <script>
 export default {
+  data: {
+    lantern: {
+      lockColor: false,
+      keepOn: true,
+      lastHue: 0,
+      pendingColor: ''
+    }
+  },
   onCreate() {
     console.log('[Lantern] onCreate');
   },
