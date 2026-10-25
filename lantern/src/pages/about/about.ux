@@ -20,9 +20,10 @@
         <image class="appIcon" src="/common/images/logo.png"></image>
       </div>
       <text class="h2" style="top: 320px;">开发组</text>
-      <text class="body" style="top: 356px;">Halvamazd</text>
-      <text class="h2" style="top: 404px;">说明</text>
-      <text class="body" style="top: 440px;">小米手环 9 Pro 测试作品，未经其他机型验证</text>
+      <text class="body" style="top: 354px;">Halvamazd</text>
+      <text class="h2" style="top: 398px;">说明</text>
+      <text class="body" style="top: 432px; font-size: 16px;">小米手环 9 Pro 测试作品</text>
+      <text class="body" style="top: 458px; font-size: 16px;">未经其他机型验证，后果自负</text>
     </div>
   </div>
 </template>
