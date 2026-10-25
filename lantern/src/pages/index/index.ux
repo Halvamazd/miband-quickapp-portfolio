@@ -120,7 +120,7 @@
       if (state.pendingColor) {
         var c = state.pendingColor;
         state.pendingColor = '';
-        setTimeout(function () { that.paint(168, 216, c); }, 60);
+        setTimeout(function () { that.paint(168, 208, c); }, 60);
       }
     },
     onHide() {

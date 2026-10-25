@@ -43,7 +43,7 @@
   .preview {
     position: absolute;
     left: 132px;
-    top: 192px;
+    top: 172px;
     width: 72px;
     height: 72px;
     border-radius: 36px;
