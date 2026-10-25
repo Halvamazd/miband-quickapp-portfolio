@@ -1,0 +1,96 @@
+<template>
+  <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
+    <text class="title">关于</text>
+    <text class="appName">彩灯 Lantern</text>
+    <text class="line" style="top: 190px;">版本 1.4.0</text>
+    <text class="line" style="top: 232px;">开发组 Halvamazd</text>
+    <text class="note" style="top: 300px;">小米手环 9 Pro 测试作品</text>
+    <text class="note" style="top: 330px;">未经其他机型验证，后果自负</text>
+    <text class="backTip">← 左滑返回</text>
+  </div>
+</template>
+
+<style>
+  .root {
+    width: 336px;
+    height: 480px;
+    position: relative;
+    background-color: #000000;
+    align-items: center;
+  }
+  .title {
+    position: absolute;
+    left: 0;
+    top: 40px;
+    width: 336px;
+    text-align: center;
+    color: #ffffff;
+    font-size: 22px;
+  }
+  .appName {
+    position: absolute;
+    left: 0;
+    top: 130px;
+    width: 336px;
+    text-align: center;
+    color: #FFD166;
+    font-size: 26px;
+  }
+  .line {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    text-align: center;
+    color: #ffffff;
+    font-size: 19px;
+  }
+  .note {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    text-align: center;
+    color: #8a8a8a;
+    font-size: 14px;
+  }
+  .backTip {
+    position: absolute;
+    left: 0;
+    top: 448px;
+    width: 336px;
+    text-align: center;
+    color: #6a6a6a;
+    font-size: 13px;
+  }
+</style>
+
+<script>
+  import router from '@system.router';
+
+  export default {
+    onInit() {
+      this._sx = 0;
+      this._sy = 0;
+    },
+    onTouchStart(e) {
+      var p = this.getPoint(e);
+      this._sx = p.clientX;
+      this._sy = p.clientY;
+    },
+    onTouchEnd(e) {
+      var p = this.getPoint(e);
+      var dx = p.clientX - this._sx;
+      var dy = Math.abs(p.clientY - this._sy);
+      if (dx > 65 && dy < 90) {
+        router.back();
+      }
+    },
+    getPoint(e) {
+      try {
+        if (e && e.touches && e.touches.length > 0) { return e.touches[0]; }
+        if (e && e.changedTouches && e.changedTouches.length > 0) { return e.changedTouches[0]; }
+        if (e && typeof e.clientX === 'number') { return e; }
+      } catch (err) {}
+      return { clientX: 168, clientY: 240 };
+    }
+  };
+</script>

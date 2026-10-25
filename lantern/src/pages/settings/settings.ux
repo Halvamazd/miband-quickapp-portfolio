@@ -1,0 +1,238 @@
+<template>
+  <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
+    <div class="titleBar" style="left: {{titleX}}px; top: 56px;">
+      <div class="titleInner"><text class="title">设置</text></div>
+    </div>
+    <div class="row" style="left: {{x0}}px; top: 128px; opacity: {{o0}};" onclick="goColor">
+      <div class="rowInner"><text class="rowLabel">自定义颜色</text><text class="rowArrow">›</text></div>
+    </div>
+    <div class="row" style="left: {{x1}}px; top: 198px; opacity: {{o1}};" onclick="goBright">
+      <div class="rowInner"><text class="rowLabel">屏幕亮度</text><text class="rowArrow">›</text></div>
+    </div>
+    <div class="row" style="left: {{x2}}px; top: 268px; opacity: {{o2}};" onclick="toggleKeep">
+      <div class="rowInner">
+        <text class="rowLabel">屏幕常亮</text>
+        <div class="track" style="background-color: {{swBg}};"><div class="dot" style="left: {{swDotX}}px;"></div></div>
+      </div>
+    </div>
+    <div class="row" style="left: {{x3}}px; top: 338px; opacity: {{o3}};" onclick="goAbout">
+      <div class="rowInner"><text class="rowLabel">关于</text><text class="rowArrow">›</text></div>
+    </div>
+    <text if="{{msg}}" class="msg">{{msg}}</text>
+    <text class="backTip">← 左滑返回</text>
+  </div>
+</template>
+
+<style>
+  .root {
+    width: 336px;
+    height: 480px;
+    position: relative;
+    background-color: #000000;
+  }
+  .titleBar {
+    position: absolute;
+    width: 336px;
+    height: 48px;
+  }
+  .titleInner {
+    width: 336px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+  }
+  .title {
+    color: #ffffff;
+    font-size: 24px;
+  }
+  .row {
+    position: absolute;
+    width: 336px;
+    height: 60px;
+    align-items: center;
+    justify-content: center;
+  }
+  .rowInner {
+    width: 288px;
+    height: 60px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rowLabel {
+    color: #ffffff;
+    font-size: 22px;
+  }
+  .rowArrow {
+    color: #9a9a9a;
+    font-size: 28px;
+  }
+  .track {
+    position: relative;
+    width: 64px;
+    height: 34px;
+    border-radius: 17px;
+  }
+  .dot {
+    position: absolute;
+    top: 3px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background-color: #ffffff;
+  }
+  .msg {
+    position: absolute;
+    left: 0;
+    top: 412px;
+    width: 336px;
+    text-align: center;
+    color: #ff6b6b;
+    font-size: 14px;
+  }
+  .backTip {
+    position: absolute;
+    left: 0;
+    top: 442px;
+    width: 336px;
+    text-align: center;
+    color: #6a6a6a;
+    font-size: 13px;
+  }
+</style>
+
+<script>
+  import router from '@system.router';
+  import brightness from '@system.brightness';
+
+  function easeOut(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
+  }
+
+  export default {
+    private: {
+      titleX: -336,
+      x0: 336,
+      x1: 336,
+      x2: 336,
+      x3: 336,
+      o0: 0,
+      o1: 0,
+      o2: 0,
+      o3: 0,
+      keepOn: false,
+      swBg: '#4A4A4A',
+      swDotX: 3,
+      msg: ''
+    },
+    onInit() {
+      this._sx = 0;
+      this._sy = 0;
+    },
+    onShow() {
+      this.startList();
+    },
+    onDestroy() {
+      this.keepOff();
+    },
+    onTouchStart(e) {
+      var p = this.getPoint(e);
+      this._sx = p.clientX;
+      this._sy = p.clientY;
+    },
+    onTouchEnd(e) {
+      var p = this.getPoint(e);
+      var dx = p.clientX - this._sx;
+      var dy = Math.abs(p.clientY - this._sy);
+      if (dx > 65 && dy < 90) {
+        router.back();
+      }
+    },
+    getPoint(e) {
+      try {
+        if (e && e.touches && e.touches.length > 0) { return e.touches[0]; }
+        if (e && e.changedTouches && e.changedTouches.length > 0) { return e.changedTouches[0]; }
+        if (e && typeof e.clientX === 'number') { return e; }
+      } catch (err) {}
+      return { clientX: 168, clientY: 240 };
+    },
+    startList() {
+      this.titleX = -336;
+      this.x0 = 336;
+      this.x1 = 336;
+      this.x2 = 336;
+      this.x3 = 336;
+      this.o0 = 1;
+      this.o1 = 1;
+      this.o2 = 1;
+      this.o3 = 1;
+      this.msg = '';
+      this.keepOn = false;
+      this.swBg = '#4A4A4A';
+      this.swDotX = 3;
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var t = Date.now() - t0;
+          var all = true;
+          var tp = t / 320;
+          if (tp > 1) { tp = 1; }
+          that.titleX = -336 * (1 - easeOut(tp));
+          if (tp < 1) { all = false; }
+          var starts = [140, 210, 280, 350];
+          for (var i = 0; i < 4; i++) {
+            var p = (t - starts[i]) / 280;
+            if (p < 0) { p = 0; }
+            if (p > 1) { p = 1; }
+            var x = 336 * (1 - easeOut(p));
+            if (i === 0) { that.x0 = x; }
+            if (i === 1) { that.x1 = x; }
+            if (i === 2) { that.x2 = x; }
+            if (i === 3) { that.x3 = x; }
+            if (p < 1) { all = false; }
+          }
+          if (!all) { that._listT = setTimeout(step, 16); }
+        } catch (e) {}
+      };
+      step();
+    },
+    goColor() {
+      router.push({ uri: '/pages/color' });
+    },
+    goBright() {
+      router.push({ uri: '/pages/brightness' });
+    },
+    goAbout() {
+      router.push({ uri: '/pages/about' });
+    },
+    toggleKeep() {
+      var that = this;
+      var target = !this.keepOn;
+      try {
+        brightness.setKeepScreenOn({
+          keepScreenOn: target,
+          success: function () {
+            that.keepOn = target;
+            that.swBg = target ? '#34C759' : '#4A4A4A';
+            that.swDotX = target ? 33 : 3;
+            that.msg = '';
+          },
+          fail: function () {
+            that.msg = '常亮接口不可用';
+          }
+        });
+      } catch (e) {
+        this.msg = '常亮接口不可用';
+      }
+    },
+    keepOff() {
+      if (!this.keepOn) { return; }
+      this.keepOn = false;
+      try {
+        brightness.setKeepScreenOn({ keepScreenOn: false, success: function () {}, fail: function () {} });
+      } catch (e) {}
+    }
+  };
+</script>

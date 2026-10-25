@@ -1,0 +1,159 @@
+<template>
+  <div class="root" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
+    <text class="title">屏幕亮度</text>
+    <div class="barZone">
+      <div class="bar">
+        <div class="fill" style="height: {{fillH}}px;"></div>
+        <text class="sun">☀</text>
+      </div>
+    </div>
+    <text if="{{msg}}" class="msg">{{msg}}</text>
+    <text class="backTip">← 左滑返回</text>
+  </div>
+</template>
+
+<style>
+  .root {
+    width: 336px;
+    height: 480px;
+    position: relative;
+    background-color: #000000;
+  }
+  .title {
+    position: absolute;
+    left: 0;
+    top: 36px;
+    width: 336px;
+    text-align: center;
+    color: #ffffff;
+    font-size: 22px;
+  }
+  .barZone {
+    position: absolute;
+    left: 0;
+    top: 96px;
+    width: 336px;
+    height: 320px;
+    align-items: center;
+    justify-content: center;
+  }
+  .bar {
+    position: relative;
+    width: 64px;
+    height: 320px;
+    border-radius: 32px;
+    background-color: #3a3a3a;
+  }
+  .fill {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 64px;
+    border-radius: 32px;
+    background-color: #ffffff;
+  }
+  .sun {
+    position: absolute;
+    left: 0;
+    bottom: 10px;
+    width: 64px;
+    text-align: center;
+    color: #3a3a3a;
+    font-size: 20px;
+  }
+  .msg {
+    position: absolute;
+    left: 0;
+    top: 428px;
+    width: 336px;
+    text-align: center;
+    color: #ff6b6b;
+    font-size: 14px;
+  }
+  .backTip {
+    position: absolute;
+    left: 0;
+    top: 448px;
+    width: 336px;
+    text-align: center;
+    color: #6a6a6a;
+    font-size: 13px;
+  }
+</style>
+
+<script>
+  import router from '@system.router';
+  import brightness from '@system.brightness';
+
+  var TOP = 96;
+  var HEIGHT = 320;
+
+  export default {
+    private: {
+      val: 200,
+      fillH: 251,
+      msg: ''
+    },
+    onInit() {
+      this._sx = 0;
+      this._sy = 0;
+      this._drag = false;
+    },
+    onTouchStart(e) {
+      var p = this.getPoint(e);
+      this._sx = p.clientX;
+      this._sy = p.clientY;
+      if (p.clientX >= 100 && p.clientX <= 236 && p.clientY >= TOP - 10 && p.clientY <= TOP + HEIGHT + 10) {
+        this._drag = true;
+        this.setByY(p.clientY);
+      }
+    },
+    onTouchMove(e) {
+      if (!this._drag) { return; }
+      var p = this.getPoint(e);
+      this.setByY(p.clientY);
+    },
+    onTouchEnd(e) {
+      if (this._drag) {
+        this._drag = false;
+        this.apply();
+        return;
+      }
+      var p = this.getPoint(e);
+      var dx = p.clientX - this._sx;
+      var dy = Math.abs(p.clientY - this._sy);
+      if (dx > 65 && dy < 90) {
+        router.back();
+      }
+    },
+    getPoint(e) {
+      try {
+        if (e && e.touches && e.touches.length > 0) { return e.touches[0]; }
+        if (e && e.changedTouches && e.changedTouches.length > 0) { return e.changedTouches[0]; }
+        if (e && typeof e.clientX === 'number') { return e; }
+      } catch (err) {}
+      return { clientX: 168, clientY: 240 };
+    },
+    setByY(y) {
+      var v = (TOP + HEIGHT - y) / HEIGHT * 255;
+      if (v < 0) { v = 0; }
+      if (v > 255) { v = 255; }
+      v = Math.round(v);
+      this.val = v;
+      this.fillH = HEIGHT * v / 255;
+      this.msg = '';
+    },
+    apply() {
+      var that = this;
+      try {
+        brightness.setValue({
+          value: this.val,
+          success: function () { that.msg = ''; },
+          fail: function () { that.msg = '亮度接口不可用'; }
+        });
+      } catch (e) {
+        this.msg = '亮度接口不可用';
+      }
+    }
+  };
+</script>
