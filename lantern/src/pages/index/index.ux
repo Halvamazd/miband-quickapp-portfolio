@@ -21,56 +21,31 @@
   .hint {
     color: #ffffff;
     font-size: 15px;
-    animation-name: hintPulse;
-    animation-duration: 2.4s;
-    animation-iteration-count: infinite;
-    animation-timing-function: ease-in-out;
-  }
-  @keyframes hintPulse {
-    0% { opacity: 0.35; }
-    50% { opacity: 1; }
-    100% { opacity: 0.35; }
   }
 </style>
 
 <script>
   import vibrator from '@system.vibrator';
+  import brightness from '@system.brightness';
 
-  var ENTER_MS = 200;
-  var PAUSE_MS = 500;
-  var GROW_MS = 900;
-  var START_R = 9;
-  var STEP_MS = 20;
+  var ENTER_MS = 160;
+  var PAUSE_MS = 180;
+  var GROW_MS = 620;
+  var START_R = 20;
+  var STEP_MS = 16;
   var SCREEN_W = 336;
   var SCREEN_H = 480;
-
-  function bezierCoord(t, p1, p2) {
-    var mt = 1 - t;
-    return 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t;
-  }
-
-  function cubicBezier(x1, y1, x2, y2) {
-    return function (x) {
-      if (x <= 0) { return 0; }
-      if (x >= 1) { return 1; }
-      var lo = 0;
-      var hi = 1;
-      var t = 0.5;
-      for (var i = 0; i < 18; i++) {
-        t = (lo + hi) * 0.5;
-        if (bezierCoord(t, x1, x2) < x) { lo = t; } else { hi = t; }
-      }
-      return bezierCoord(t, y1, y2);
-    };
-  }
-
-  var easeGrow = cubicBezier(0.32, 0.72, 0, 1);
 
   function easeEnter(t) {
     var c1 = 1.70158;
     var c3 = c1 + 1;
     var u = t - 1;
     return 1 + c3 * u * u * u + c1 * u * u;
+  }
+
+  function easeGrow(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
   }
 
   function dist(dx, dy) {
@@ -117,11 +92,54 @@
       ballColor: '#ffd166'
     },
     onInit() {},
+    onShow() {
+      this.enterLampMode();
+    },
     onHide() {
+      this.exitLampMode();
       this.finishNow();
     },
     onDestroy() {
+      this.exitLampMode();
       this.finishNow();
+    },
+    enterLampMode() {
+      try { brightness.setKeepScreenOn({ keepScreenOn: true }); } catch (e) {}
+      try {
+        var that = this;
+        brightness.getMode({
+          success: function (d) {
+            try {
+              if (!that._lampSaved) {
+                that._origMode = d.mode;
+                that._lampSaved = true;
+              }
+              brightness.getValue({
+                success: function (v) {
+                  try {
+                    if (!that._brightSaved) {
+                      that._origBrightness = v.value;
+                      that._brightSaved = true;
+                    }
+                  } catch (e1) {}
+                }
+              });
+              brightness.setMode({ mode: 0 });
+              brightness.setValue({ value: 255 });
+            } catch (e2) {}
+          }
+        });
+      } catch (e3) {}
+    },
+    exitLampMode() {
+      try { brightness.setKeepScreenOn({ keepScreenOn: false }); } catch (e) {}
+      try {
+        if (this._origMode === 1) {
+          brightness.setMode({ mode: 1 });
+        } else if (typeof this._origBrightness === 'number') {
+          brightness.setValue({ value: this._origBrightness });
+        }
+      } catch (e) {}
     },
     finishNow() {
       try {
