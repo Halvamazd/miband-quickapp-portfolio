@@ -14,14 +14,14 @@
           <text class="rb" style="color: #6EE7D8;">r</text>
         </div>
         <text class="intro">点到哪里，亮到哪里</text>
-        <text class="ver">版本 1.5.1</text>
+        <text class="ver">版本 1.5.3</text>
         <image class="appIcon" src="/common/images/logo.png"></image>
       </div>
-      <text class="h2" style="top: 330px;">开发组</text>
-      <text class="body" style="top: 364px;">Halvamazd</text>
-      <text class="h2" style="top: 404px;">说明</text>
-      <text class="note" style="top: 438px;">小米手环 9 Pro 测试作品</text>
-      <text class="note" style="top: 462px;">未经其他机型验证，后果自负</text>
+      <text class="h2" style="top: 286px;">开发组</text>
+      <text class="body" style="top: 318px;">Halvamazd</text>
+      <text class="h2" style="top: 356px;">说明</text>
+      <text class="note" style="top: 390px;">小米手环 9 Pro 测试作品</text>
+      <text class="note" style="top: 414px;">未经其他机型验证，后果自负</text>
     </div>
   </div>
 </template>
@@ -43,7 +43,7 @@
   .title {
     position: absolute;
     left: 0;
-    top: 32px;
+    top: 34px;
     width: 336px;
     text-align: center;
     color: #ffffff;
@@ -52,43 +52,43 @@
   .card {
     position: absolute;
     left: 20px;
-    top: 92px;
+    top: 82px;
     width: 296px;
-    height: 214px;
-    border-radius: 24px;
+    height: 180px;
+    border-radius: 22px;
     background-color: #161616;
   }
   .rainbow {
     position: absolute;
     left: 20px;
-    top: 30px;
+    top: 24px;
     flex-direction: row;
     align-items: center;
   }
   .rb {
-    font-size: 25px;
+    font-size: 24px;
   }
   .intro {
     position: absolute;
     left: 20px;
-    top: 82px;
+    top: 66px;
     color: #9a9a9a;
-    font-size: 14px;
+    font-size: 13px;
   }
   .ver {
     position: absolute;
     left: 20px;
-    top: 112px;
+    top: 92px;
     color: #ffffff;
-    font-size: 16px;
+    font-size: 15px;
   }
   .appIcon {
     position: absolute;
-    left: 186px;
-    top: 58px;
-    width: 94px;
-    height: 94px;
-    border-radius: 22px;
+    left: 192px;
+    top: 38px;
+    width: 86px;
+    height: 86px;
+    border-radius: 20px;
   }
   .h2 {
     position: absolute;
@@ -106,7 +106,7 @@
     position: absolute;
     left: 28px;
     color: #ffffff;
-    font-size: 16px;
+    font-size: 15px;
   }
 </style>
 

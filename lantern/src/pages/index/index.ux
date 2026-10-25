@@ -43,6 +43,7 @@
   var MAX_R = 650;
   var STEP_MS = 16;
   var MASK_MS = 460;
+  var LONG_MS = 800;
 
   function easeOut(t) {
     var u = 1 - t;
@@ -121,6 +122,7 @@
       this.finishNow();
     },
     onTouchStart(e) {
+      this.clearLp();
       this._t0 = Date.now();
       var p = this.getPoint(e);
       this._sx = p.clientX;
@@ -131,12 +133,12 @@
       var that = this;
       this._lp = setTimeout(function () {
         try {
-          if (!that._moved && !that._navLock) {
-            that._lpFired = true;
-            that.goSettings();
-          }
+          if (that._moved || that._navLock) { return; }
+          if (Date.now() - that._lastTap < 700) { return; }
+          that._lpFired = true;
+          that.goSettings();
         } catch (lpErr) {}
-      }, 650);
+      }, LONG_MS);
     },
     onTouchMove(e) {
       var p = this.getPoint(e);
