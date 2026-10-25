@@ -26,7 +26,6 @@
 
 <script>
   import vibrator from '@system.vibrator';
-  import brightness from '@system.brightness';
 
   var ENTER_MS = 160;
   var PAUSE_MS = 180;
@@ -92,54 +91,11 @@
       ballColor: '#ffd166'
     },
     onInit() {},
-    onShow() {
-      this.enterLampMode();
-    },
     onHide() {
-      this.exitLampMode();
       this.finishNow();
     },
     onDestroy() {
-      this.exitLampMode();
       this.finishNow();
-    },
-    enterLampMode() {
-      try { brightness.setKeepScreenOn({ keepScreenOn: true }); } catch (e) {}
-      try {
-        var that = this;
-        brightness.getMode({
-          success: function (d) {
-            try {
-              if (!that._lampSaved) {
-                that._origMode = d.mode;
-                that._lampSaved = true;
-              }
-              brightness.getValue({
-                success: function (v) {
-                  try {
-                    if (!that._brightSaved) {
-                      that._origBrightness = v.value;
-                      that._brightSaved = true;
-                    }
-                  } catch (e1) {}
-                }
-              });
-              brightness.setMode({ mode: 0 });
-              brightness.setValue({ value: 255 });
-            } catch (e2) {}
-          }
-        });
-      } catch (e3) {}
-    },
-    exitLampMode() {
-      try { brightness.setKeepScreenOn({ keepScreenOn: false }); } catch (e) {}
-      try {
-        if (this._origMode === 1) {
-          brightness.setMode({ mode: 1 });
-        } else if (typeof this._origBrightness === 'number') {
-          brightness.setValue({ value: this._origBrightness });
-        }
-      } catch (e) {}
     },
     finishNow() {
       try {
