@@ -1,7 +1,8 @@
 <template>
-  <div class="root" style="background-color: {{bgColor}};" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd" onclick="onTapClick">
+  <div class="root" style="background-color: {{bgColor}};" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
     <div if="{{ballOn}}" class="ball" style="left: {{bx}}px; top: {{by}}px; width: {{bw}}px; height: {{bw}}px; background-color: {{ballColor}};"></div>
     <text if="{{showHint}}" class="hint">点击</text>
+    <div if="{{maskOn}}" class="mask" style="left: {{mx}}px; top: {{my}}px; width: {{mr2}}px; height: {{mr2}}px;"></div>
   </div>
 </template>
 
@@ -22,6 +23,11 @@
     color: #ffffff;
     font-size: 18px;
   }
+  .mask {
+    position: absolute;
+    border-radius: 50%;
+    background-color: #000000;
+  }
 </style>
 
 <script>
@@ -36,6 +42,7 @@
   var START_R = 20;
   var MAX_R = 650;
   var STEP_MS = 16;
+  var MASK_MS = 460;
 
   function easeOut(t) {
     var u = 1 - t;
@@ -86,17 +93,26 @@
       bx: 0,
       by: 0,
       bw: 0,
-      ballColor: '#ffd166'
+      ballColor: '#ffd166',
+      maskOn: false,
+      mx: 0,
+      my: 0,
+      mr2: 0
     },
     onInit() {
       this._hue = 0;
       this._navLock = false;
+      this._lastTap = 0;
+      this._lpFired = false;
+      this._moved = false;
     },
     onShow() {
       this._navLock = false;
       this._lpFired = false;
-      this.finishNow();
-      this.bgColor = '#000000';
+      this._moved = false;
+      this._playing = false;
+      this.ballOn = false;
+      this.maskOn = false;
     },
     onHide() {
       this.finishNow();
@@ -105,11 +121,13 @@
       this.finishNow();
     },
     onTouchStart(e) {
+      this._t0 = Date.now();
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;
       this._moved = false;
-      if (this._navLock) { return; }
+      this._lpFired = false;
+      if (this._navLock || this._playing) { return; }
       var that = this;
       this._lp = setTimeout(function () {
         try {
@@ -127,8 +145,18 @@
         this.clearLp();
       }
     },
-    onTouchEnd() {
+    onTouchEnd(e) {
       this.clearLp();
+      if (this._lpFired) { this._lpFired = false; return; }
+      if (this._moved) { return; }
+      if (this._navLock || this._playing) { return; }
+      var dt = Date.now() - this._t0;
+      if (dt >= 300) { return; }
+      var now = Date.now();
+      if (now - this._lastTap < 250) { return; }
+      this._lastTap = now;
+      var p = this.getPoint(e);
+      this.tap(p.clientX, p.clientY);
     },
     clearLp() {
       try {
@@ -139,14 +167,35 @@
       if (this._navLock) { return; }
       this._navLock = true;
       try { vibrator.vibrate({ mode: 'short' }); } catch (v) {}
-      router.push({ uri: '/pages/settings' });
-    },
-    onTapClick(e) {
-      if (this._lpFired) { this._lpFired = false; return; }
-      if (this._moved) { return; }
-      if (this._navLock) { return; }
-      var p = this.getPoint(e);
-      this.tap(p.clientX, p.clientY);
+      var that = this;
+      var lit = this.bgColor !== '#000000';
+      if (!lit) {
+        router.push({ uri: '/pages/settings' });
+        return;
+      }
+      var t0 = Date.now();
+      this.maskOn = true;
+      var x0 = 0;
+      var y0 = SCREEN_H;
+      var rMax = 660;
+      var stepMask = function () {
+        try {
+          var p = (Date.now() - t0) / MASK_MS;
+          if (p > 1) { p = 1; }
+          var r = rMax * easeOut(p);
+          that.mx = x0 - r;
+          that.my = y0 - r;
+          that.mr2 = r * 2;
+          if (p < 1) {
+            that._maskT = setTimeout(stepMask, 16);
+          } else {
+            router.push({ uri: '/pages/settings' });
+          }
+        } catch (e) {
+          router.push({ uri: '/pages/settings' });
+        }
+      };
+      stepMask();
     },
     getPoint(e) {
       try {
@@ -159,6 +208,7 @@
     finishNow() {
       try {
         if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+        if (this._maskT) { clearTimeout(this._maskT); this._maskT = null; }
         this.clearLp();
         if (this._anim && this._anim.state === 'grow') {
           this.bgColor = this._anim.color;

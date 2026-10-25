@@ -121,6 +121,10 @@
       setTimeout(function () { that.startList(); }, 30);
       this.defaultKeepOn();
     },
+    onShow() {
+      this._nav = false;
+      this._leaving = false;
+    },
     onDestroy() {
       this.keepOff();
       this.clearTimers();

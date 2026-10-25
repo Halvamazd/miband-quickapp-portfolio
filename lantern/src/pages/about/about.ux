@@ -3,27 +3,25 @@
     <div class="wrap" style="left: {{shift}}px;">
       <text class="title">关于彩灯</text>
       <div class="card">
-        <div class="cardLeft">
-          <div class="rainbow">
-            <text class="rb" style="color: #FF5C5C;">彩</text>
-            <text class="rb" style="color: #FFA94D;">灯</text>
-            <text class="rb" style="color: #FFD166;">L</text>
-            <text class="rb" style="color: #7FE07F;">a</text>
-            <text class="rb" style="color: #4FC3F7;">n</text>
-            <text class="rb" style="color: #8B7CF6;">t</text>
-            <text class="rb" style="color: #FF6BCB;">e</text>
-            <text class="rb" style="color: #6EE7D8;">r</text>
-          </div>
-          <text class="intro">点到哪里，亮到哪里</text>
-          <text class="ver">版本 1.5.0</text>
+        <div class="rainbow">
+          <text class="rb" style="color: #FF5C5C;">彩</text>
+          <text class="rb" style="color: #FFA94D;">灯</text>
+          <text class="rb" style="color: #FFD166;">L</text>
+          <text class="rb" style="color: #7FE07F;">a</text>
+          <text class="rb" style="color: #4FC3F7;">n</text>
+          <text class="rb" style="color: #8B7CF6;">t</text>
+          <text class="rb" style="color: #FF6BCB;">e</text>
+          <text class="rb" style="color: #6EE7D8;">r</text>
         </div>
+        <text class="intro">点到哪里，亮到哪里</text>
+        <text class="ver">版本 1.5.1</text>
         <image class="appIcon" src="/common/images/logo.png"></image>
       </div>
-      <text class="h2" style="top: 320px;">开发组</text>
-      <text class="body" style="top: 354px;">Halvamazd</text>
-      <text class="h2" style="top: 398px;">说明</text>
-      <text class="body" style="top: 432px; font-size: 16px;">小米手环 9 Pro 测试作品</text>
-      <text class="body" style="top: 458px; font-size: 16px;">未经其他机型验证，后果自负</text>
+      <text class="h2" style="top: 330px;">开发组</text>
+      <text class="body" style="top: 364px;">Halvamazd</text>
+      <text class="h2" style="top: 404px;">说明</text>
+      <text class="note" style="top: 438px;">小米手环 9 Pro 测试作品</text>
+      <text class="note" style="top: 462px;">未经其他机型验证，后果自负</text>
     </div>
   </div>
 </template>
@@ -45,7 +43,7 @@
   .title {
     position: absolute;
     left: 0;
-    top: 36px;
+    top: 32px;
     width: 336px;
     text-align: center;
     color: #ffffff;
@@ -54,41 +52,43 @@
   .card {
     position: absolute;
     left: 20px;
-    top: 108px;
+    top: 92px;
     width: 296px;
-    height: 180px;
+    height: 214px;
     border-radius: 24px;
     background-color: #161616;
-    flex-direction: row;
-    align-items: center;
-  }
-  .cardLeft {
-    width: 186px;
-    height: 180px;
-    padding-left: 18px;
-    justify-content: center;
   }
   .rainbow {
+    position: absolute;
+    left: 20px;
+    top: 30px;
     flex-direction: row;
     align-items: center;
   }
   .rb {
-    font-size: 26px;
+    font-size: 25px;
   }
   .intro {
+    position: absolute;
+    left: 20px;
+    top: 82px;
     color: #9a9a9a;
     font-size: 14px;
-    margin-top: 8px;
   }
   .ver {
+    position: absolute;
+    left: 20px;
+    top: 112px;
     color: #ffffff;
     font-size: 16px;
-    margin-top: 6px;
   }
   .appIcon {
-    width: 86px;
-    height: 86px;
-    border-radius: 20px;
+    position: absolute;
+    left: 186px;
+    top: 58px;
+    width: 94px;
+    height: 94px;
+    border-radius: 22px;
   }
   .h2 {
     position: absolute;
@@ -101,6 +101,12 @@
     left: 28px;
     color: #ffffff;
     font-size: 18px;
+  }
+  .note {
+    position: absolute;
+    left: 28px;
+    color: #ffffff;
+    font-size: 16px;
   }
 </style>
 
