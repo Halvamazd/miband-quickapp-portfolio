@@ -1,7 +1,65 @@
 <template>
-  <div class="root" style="background-color: {{bgColor}};" onclick="onTap">
-    <div if="{{ballOn}}" class="ball" style="left: {{bx}}px; top: {{by}}px; width: {{bw}}px; height: {{bw}}px; background-color: {{ballColor}};"></div>
-    <text if="{{showHint}}" class="hint">点击</text>
+  <div class="root" style="background-color: {{bgColor}};" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
+    <div if="{{vMain}}" class="fill">
+      <div if="{{ballOn}}" class="ball" style="left: {{bx}}px; top: {{by}}px; width: {{bw}}px; height: {{bw}}px; background-color: {{ballColor}};"></div>
+      <text if="{{showHint}}" class="hint">点击</text>
+    </div>
+
+    <div if="{{maskOn}}" class="mask" style="left: {{mx}}px; top: {{my}}px; width: {{mr2}}px; height: {{mr2}}px;"></div>
+
+    <div if="{{vSetting}}" class="setting">
+      <div class="titleBar" style="left: {{titleX}}px; top: 48px;">
+        <div class="titleInner"><text class="title">设置</text></div>
+      </div>
+      <div class="row" style="left: {{x0}}px; top: 124px; opacity: {{o0}};">
+        <div class="rowInner"><text class="rowLabel">自定义颜色</text><text class="rowArrow">›</text></div>
+      </div>
+      <div class="row" style="left: {{x1}}px; top: 186px; opacity: {{o1}};">
+        <div class="rowInner"><text class="rowLabel">屏幕亮度</text><text class="rowArrow">›</text></div>
+      </div>
+      <div class="row" style="left: {{x2}}px; top: 248px; opacity: {{o2}};">
+        <div class="rowInner">
+          <text class="rowLabel">屏幕常亮</text>
+          <div class="track" style="background-color: {{swBg}};"><div class="dot" style="left: {{swDotX}}px;"></div></div>
+        </div>
+      </div>
+      <div class="row" style="left: {{x3}}px; top: 310px; opacity: {{o3}};">
+        <div class="rowInner"><text class="rowLabel">关于</text><text class="rowArrow">›</text></div>
+      </div>
+    </div>
+
+    <div if="{{pageOn}}" class="page" style="left: {{pageX}}px;">
+      <div if="{{vBright}}">
+        <div class="pageTitleRow" style="top: 44px;"><text class="pageTitle">屏幕亮度</text></div>
+        <div class="bigVal" style="top: 100px;"><text class="valText">{{brightVal}}</text></div>
+        <div class="trackZone" style="top: 196px;">
+          <div class="bar">
+            <div class="fill" style="width: {{brightFillW}}px;"></div>
+            <div class="thumb" style="left: {{brightThumbX}}px;"></div>
+          </div>
+        </div>
+        <div if="{{brightMsg}}" class="msgRow" style="top: 282px;"><text class="msgText">{{brightMsg}}</text></div>
+        <div class="tipRow" style="top: 318px;"><text class="tipText">拖动滑块调节亮度</text></div>
+        <div class="tipRow" style="top: 346px;"><text class="tipText">若调节无效，可能是系统自动亮度在接管</text></div>
+      </div>
+
+      <div if="{{vColor}}">
+        <div class="pageTitleRow" style="top: 44px;"><text class="pageTitle">自定义颜色</text></div>
+        <div class="bigVal" style="top: 170px;"><text class="valText">敬请期待</text></div>
+        <div class="tipRow" style="top: 236px;"><text class="tipText">下个版本开发中</text></div>
+      </div>
+
+      <div if="{{vAbout}}">
+        <div class="pageTitleRow" style="top: 44px;"><text class="pageTitle">关于</text></div>
+        <div class="aboutRow" style="top: 116px;"><text class="aboutName">彩灯 Lantern</text></div>
+        <div class="aboutRow" style="top: 156px;"><text class="aboutText">版本 1.3.0</text></div>
+        <div class="aboutRow" style="top: 192px;"><text class="aboutText">开发组 Halvamazd</text></div>
+        <div class="tipRow" style="top: 248px;"><text class="tipText">小米手环 9 Pro 测试作品</text></div>
+        <div class="tipRow" style="top: 276px;"><text class="tipText">未经其他机型验证，后果自负</text></div>
+      </div>
+
+      <div class="tipRow" style="top: 442px;"><text class="tipText">← 左滑返回</text></div>
+    </div>
   </div>
 </template>
 
@@ -10,6 +68,13 @@
     width: 336px;
     height: 480px;
     position: relative;
+  }
+  .fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 336px;
+    height: 480px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -22,33 +87,200 @@
     color: #ffffff;
     font-size: 15px;
   }
+  .mask {
+    position: absolute;
+    border-radius: 50%;
+    background-color: #000000;
+  }
+  .setting {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 336px;
+    height: 480px;
+    background-color: #000000;
+  }
+  .titleBar {
+    position: absolute;
+    width: 336px;
+    height: 44px;
+  }
+  .titleInner {
+    width: 336px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+  .title {
+    color: #ffffff;
+    font-size: 19px;
+  }
+  .row {
+    position: absolute;
+    width: 336px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+  }
+  .rowInner {
+    width: 286px;
+    height: 56px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rowLabel {
+    color: #ffffff;
+    font-size: 16px;
+  }
+  .rowArrow {
+    color: #8a8a8a;
+    font-size: 20px;
+  }
+  .track {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    border-radius: 14px;
+  }
+  .dot {
+    position: absolute;
+    top: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: #ffffff;
+  }
+  .page {
+    position: absolute;
+    top: 0;
+    width: 336px;
+    height: 480px;
+    background-color: #000000;
+  }
+  .pageTitleRow {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+  }
+  .pageTitle {
+    color: #ffffff;
+    font-size: 18px;
+  }
+  .bigVal {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+  }
+  .valText {
+    color: #FFD166;
+    font-size: 40px;
+  }
+  .trackZone {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+  }
+  .bar {
+    position: relative;
+    width: 240px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: #3a3a3a;
+  }
+  .fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 10px;
+    border-radius: 5px;
+    background-color: #FFD166;
+  }
+  .thumb {
+    position: absolute;
+    top: -9px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background-color: #ffffff;
+  }
+  .msgRow {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+  }
+  .msgText {
+    color: #ff6b6b;
+    font-size: 12px;
+  }
+  .tipRow {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+  }
+  .tipText {
+    color: #8a8a8a;
+    font-size: 12px;
+  }
+  .aboutRow {
+    position: absolute;
+    left: 0;
+    width: 336px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+  }
+  .aboutName {
+    color: #FFD166;
+    font-size: 20px;
+  }
+  .aboutText {
+    color: #ffffff;
+    font-size: 15px;
+  }
 </style>
 
 <script>
   import vibrator from '@system.vibrator';
+  import brightness from '@system.brightness';
 
+  var SCREEN_W = 336;
+  var SCREEN_H = 480;
   var ENTER_MS = 160;
   var PAUSE_MS = 180;
   var GROW_MS = 620;
   var START_R = 20;
   var STEP_MS = 16;
-  var SCREEN_W = 336;
-  var SCREEN_H = 480;
+  var MASK_MS = 520;
+  var MASK_R = 600;
+  var LIST_MS = 300;
+  var PAGE_MS = 280;
+
+  function easeOut(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
+  }
 
   function easeEnter(t) {
     var c1 = 1.70158;
     var c3 = c1 + 1;
     var u = t - 1;
     return 1 + c3 * u * u * u + c1 * u * u;
-  }
-
-  function easeGrow(t) {
-    var u = 1 - t;
-    return 1 - u * u * u;
-  }
-
-  function dist(dx, dy) {
-    return Math.sqrt(dx * dx + dy * dy);
   }
 
   function hex2(n) {
@@ -88,18 +320,370 @@
       bx: 0,
       by: 0,
       bw: 0,
-      ballColor: '#ffd166'
+      ballColor: '#ffd166',
+      maskOn: false,
+      mx: 0,
+      my: 0,
+      mr: 0,
+      mr2: 0,
+      vMain: true,
+      vSetting: false,
+      vBright: false,
+      vColor: false,
+      vAbout: false,
+      titleX: -336,
+      x0: 336,
+      x1: 336,
+      x2: 336,
+      x3: 336,
+      o0: 0,
+      o1: 0,
+      o2: 0,
+      o3: 0,
+      pageOn: false,
+      pageX: 0,
+      keepOn: false,
+      swBg: '#4A4A4A',
+      swDotX: 2,
+      brightVal: 200,
+      brightFillW: 188,
+      brightThumbX: 166,
+      brightMsg: ''
     },
-    onInit() {},
+    onInit() {
+      this._hue = 0;
+      this._tapped = false;
+    },
     onHide() {
+      this.keepOffQuiet();
       this.finishNow();
     },
     onDestroy() {
+      this.keepOffQuiet();
       this.finishNow();
+    },
+    getPoint(e) {
+      try {
+        if (e && e.touches && e.touches.length > 0) { return e.touches[0]; }
+        if (e && e.changedTouches && e.changedTouches.length > 0) { return e.changedTouches[0]; }
+        if (e && typeof e.clientX === 'number') { return e; }
+      } catch (err) {}
+      return { clientX: 168, clientY: 240 };
+    },
+    setMain() {
+      this.vMain = true;
+      this.vSetting = false;
+      this.vBright = false;
+      this.vColor = false;
+      this.vAbout = false;
+      this.pageOn = false;
+      this.pageX = 0;
+    },
+    setSetting() {
+      this.vMain = false;
+      this.vSetting = true;
+      this.vBright = false;
+      this.vColor = false;
+      this.vAbout = false;
+      this.pageOn = false;
+    },
+    onTouchStart(e) {
+      this._t0 = Date.now();
+      var p = this.getPoint(e);
+      this._sx = p.clientX;
+      this._sy = p.clientY;
+      this._moved = false;
+      this._drag = false;
+      if (!this.vMain) {
+        if (this.vBright && p.clientY >= 180 && p.clientY <= 265) {
+          this._drag = true;
+          this.setBrightByX(p.clientX);
+        }
+        return;
+      }
+      if (this._busy || this._playing || this.maskOn) { return; }
+      var that = this;
+      this._lp = setTimeout(function () {
+        try {
+          if (!that._moved && that.vMain && !that._busy && !that.maskOn) {
+            that._suppress = true;
+            try { vibrator.vibrate({ mode: 'short' }); } catch (v) {}
+            that.openSettings();
+          }
+        } catch (lpErr) {}
+      }, 600);
+    },
+    onTouchMove(e) {
+      var p = this.getPoint(e);
+      if (Math.abs(p.clientX - this._sx) > 8 || Math.abs(p.clientY - this._sy) > 8) {
+        this._moved = true;
+      }
+      if (this._drag) { this.setBrightByX(p.clientX); }
+    },
+    onTouchEnd(e) {
+      try { clearTimeout(this._lp); } catch (cErr) {}
+      var p = this.getPoint(e);
+      var dt = Date.now() - this._t0;
+      if (this.vMain) {
+        if (!this._suppress && !this._moved && dt < 500 && !this._busy && !this._playing && !this.maskOn) {
+          this.tap(p.clientX, p.clientY);
+        }
+        this._suppress = false;
+        return;
+      }
+      if (this._drag) {
+        this._drag = false;
+        this.applyBright();
+        return;
+      }
+      if (this._busy) { return; }
+      var dx = p.clientX - this._sx;
+      var dy = Math.abs(p.clientY - this._sy);
+      if (dx < -60 && dy < 80) {
+        if (this.vSetting) { this.backToMain(); }
+        else { this.backToSetting(); }
+        return;
+      }
+      if (this.vSetting && !this._moved && dt < 500) {
+        this.onRowTap(p.clientY);
+      }
+    },
+    onRowTap(y) {
+      if (y >= 124 && y < 180) { this.openPage('color'); }
+      else if (y >= 186 && y < 242) { this.openPage('brightness'); }
+      else if (y >= 248 && y < 304) { this.toggleKeep(); }
+      else if (y >= 310 && y < 366) { this.openPage('about'); }
+    },
+    openSettings() {
+      if (this._busy || !this.vMain) { return; }
+      this._busy = true;
+      this.maskOn = true;
+      var that = this;
+      var t0 = Date.now();
+      var stepMask = function () {
+        try {
+          var p = (Date.now() - t0) / MASK_MS;
+          if (p > 1) { p = 1; }
+          var e = 1 - Math.pow(1 - p, 3);
+          var r = MASK_R * e;
+          that.mr = r;
+          that.mr2 = r * 2;
+          that.mx = SCREEN_W - r;
+          that.my = SCREEN_H - r;
+          if (p < 1) {
+            that._maskT = setTimeout(stepMask, 16);
+          } else {
+            that.setSetting();
+            that.maskOn = false;
+            that.startList();
+          }
+        } catch (maskErr) {
+          that._busy = false;
+        }
+      };
+      stepMask();
+    },
+    startList() {
+      var that = this;
+      this.titleX = -336;
+      this.x0 = 336;
+      this.x1 = 336;
+      this.x2 = 336;
+      this.x3 = 336;
+      this.o0 = 0;
+      this.o1 = 0;
+      this.o2 = 0;
+      this.o3 = 0;
+      var t0 = Date.now();
+      var stepList = function () {
+        try {
+          var t = Date.now() - t0;
+          var all = true;
+          var tp = t / 320;
+          if (tp > 1) { tp = 1; }
+          that.titleX = -336 * (1 - easeOut(tp));
+          if (tp < 1) { all = false; }
+          var starts = [140, 220, 300, 380];
+          for (var i = 0; i < 4; i++) {
+            var p = (t - starts[i]) / LIST_MS;
+            if (p < 0) { p = 0; }
+            if (p > 1) { p = 1; }
+            var x = 336 * (1 - easeOut(p));
+            if (i === 0) { that.x0 = x; that.o0 = p; }
+            if (i === 1) { that.x1 = x; that.o1 = p; }
+            if (i === 2) { that.x2 = x; that.o2 = p; }
+            if (i === 3) { that.x3 = x; that.o3 = p; }
+            if (p < 1) { all = false; }
+          }
+          if (all) {
+            that._busy = false;
+          } else {
+            that._listT = setTimeout(stepList, 16);
+          }
+        } catch (listErr) {
+          that._busy = false;
+        }
+      };
+      stepList();
+    },
+    backToMain() {
+      if (!this.vSetting) { return; }
+      this._busy = true;
+      this.setMain();
+      this.showHint = true;
+      this._tapped = false;
+      this.maskOn = true;
+      this.mr = MASK_R;
+      this.mr2 = MASK_R * 2;
+      this.mx = SCREEN_W - MASK_R;
+      this.my = SCREEN_H - MASK_R;
+      var that = this;
+      var t0 = Date.now();
+      var stepBack = function () {
+        try {
+          var p = (Date.now() - t0) / MASK_MS;
+          if (p > 1) { p = 1; }
+          var e = 1 - Math.pow(1 - p, 3);
+          var r = MASK_R * (1 - e);
+          that.mr = r;
+          that.mr2 = r * 2;
+          that.mx = SCREEN_W - r;
+          that.my = SCREEN_H - r;
+          if (p < 1) {
+            that._maskT = setTimeout(stepBack, 16);
+          } else {
+            that.maskOn = false;
+            that._busy = false;
+          }
+        } catch (backErr) {
+          that._busy = false;
+          that.maskOn = false;
+        }
+      };
+      stepBack();
+    },
+    openPage(name) {
+      if (this._busy) { return; }
+      this._busy = true;
+      this.vMain = false;
+      this.vSetting = false;
+      this.vBright = (name === 'brightness');
+      this.vColor = (name === 'color');
+      this.vAbout = (name === 'about');
+      this.pageOn = true;
+      this.pageX = 336;
+      var that = this;
+      var t0 = Date.now();
+      var stepPage = function () {
+        try {
+          var p = (Date.now() - t0) / PAGE_MS;
+          if (p > 1) { p = 1; }
+          that.pageX = 336 * (1 - easeOut(p));
+          if (p < 1) {
+            that._pageT = setTimeout(stepPage, 16);
+          } else {
+            that.pageX = 0;
+            that._busy = false;
+          }
+        } catch (pageErr) {
+          that.pageX = 0;
+          that._busy = false;
+        }
+      };
+      stepPage();
+    },
+    backToSetting() {
+      if (!this.pageOn) { return; }
+      this._busy = true;
+      var that = this;
+      var startX = this.pageX;
+      var t0 = Date.now();
+      var stepBackPage = function () {
+        try {
+          var p = (Date.now() - t0) / PAGE_MS;
+          if (p > 1) { p = 1; }
+          that.pageX = startX + (336 - startX) * easeOut(p);
+          if (p < 1) {
+            that._pageT = setTimeout(stepBackPage, 16);
+          } else {
+            that.pageOn = false;
+            that.vBright = false;
+            that.vColor = false;
+            that.vAbout = false;
+            that.vSetting = true;
+            that.pageX = 0;
+            that._busy = false;
+          }
+        } catch (bpErr) {
+          that.pageOn = false;
+          that.vSetting = true;
+          that._busy = false;
+        }
+      };
+      stepBackPage();
+    },
+    setBrightByX(x) {
+      var v = (x - 48) / 240 * 255;
+      if (v < 0) { v = 0; }
+      if (v > 255) { v = 255; }
+      v = Math.round(v);
+      this.brightVal = v;
+      this.brightFillW = 240 * v / 255;
+      this.brightThumbX = 212 * v / 255;
+      this.brightMsg = '';
+    },
+    applyBright() {
+      var that = this;
+      try {
+        brightness.setValue({
+          value: this.brightVal,
+          success: function () { that.brightMsg = ''; },
+          fail: function () { that.brightMsg = '亮度接口不可用'; }
+        });
+      } catch (bErr) {
+        this.brightMsg = '亮度接口不可用';
+      }
+    },
+    toggleKeep() {
+      if (this._busy) { return; }
+      var that = this;
+      var target = !this.keepOn;
+      this._busy = true;
+      try {
+        brightness.setKeepScreenOn({
+          keepScreenOn: target,
+          success: function () {
+            that.keepOn = target;
+            that.swBg = target ? '#34C759' : '#4A4A4A';
+            that.swDotX = target ? 26 : 2;
+            that._busy = false;
+          },
+          fail: function () {
+            that.brightMsg = '常亮接口不可用';
+            that._busy = false;
+          }
+        });
+      } catch (kErr) {
+        this.brightMsg = '常亮接口不可用';
+        this._busy = false;
+      }
+    },
+    keepOffQuiet() {
+      if (!this.keepOn) { return; }
+      this.keepOn = false;
+      this.swBg = '#4A4A4A';
+      this.swDotX = 2;
+      try {
+        brightness.setKeepScreenOn({ keepScreenOn: false, success: function () {}, fail: function () {} });
+      } catch (e) {}
     },
     finishNow() {
       try {
         if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+        if (this._lp) { clearTimeout(this._lp); this._lp = null; }
+        if (this._maskT) { clearTimeout(this._maskT); this._maskT = null; }
+        if (this._listT) { clearTimeout(this._listT); this._listT = null; }
+        if (this._pageT) { clearTimeout(this._pageT); this._pageT = null; }
         if (this._anim && this._anim.state === 'grow') {
           this.bgColor = this._anim.color;
         }
@@ -108,21 +692,19 @@
         this.ballOn = false;
       } catch (e) {}
     },
-    onTap(e) {
+    tap(x, y) {
       try {
         if (this._playing) { return; }
         this.showHint = false;
-        var x = 168;
-        var y = 240;
-        if (e && typeof e.clientX === 'number') { x = e.clientX; }
-        if (e && typeof e.clientY === 'number') { y = e.clientY; }
+        this._tapped = true;
+        if (typeof x !== 'number') { x = 168; }
+        if (typeof y !== 'number') { y = 240; }
         try { vibrator.vibrate({ mode: 'short' }); } catch (err) {}
-        var rMax = Math.max(
-          dist(x, y),
-          dist(SCREEN_W - x, y),
-          dist(x, SCREEN_H - y),
-          dist(SCREEN_W - x, SCREEN_H - y)
-        ) + 3;
+        var dx1 = x;
+        var dy1 = y;
+        var dx2 = SCREEN_W - x;
+        var dy2 = SCREEN_H - y;
+        var rMax = Math.sqrt(Math.max(dx1 * dx1 + dy1 * dy1, dx2 * dx2 + dy1 * dy1, dx1 * dx1 + dy2 * dy2, dx2 * dx2 + dy2 * dy2)) + 3;
         if (!this._hue) { this._hue = Math.random() * 360; }
         this._hue = (this._hue + 137.5 + Math.random() * 40) % 360;
         var color = hslToRgb(this._hue, 90, 57);
@@ -165,7 +747,7 @@
             } else if (a.state === 'grow') {
               var p2 = t / GROW_MS;
               if (p2 > 1) { p2 = 1; }
-              var eased = easeGrow(p2);
+              var eased = easeOut(p2);
               a.r = START_R + (a.rMax - START_R) * eased;
               if (p2 >= 1) {
                 that.bgColor = a.color;
