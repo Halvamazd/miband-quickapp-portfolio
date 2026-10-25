@@ -1,12 +1,29 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
-    <text class="title">关于</text>
-    <text class="appName">彩灯 Lantern</text>
-    <text class="line" style="top: 190px;">版本 1.4.0</text>
-    <text class="line" style="top: 232px;">开发组 Halvamazd</text>
-    <text class="note" style="top: 300px;">小米手环 9 Pro 测试作品</text>
-    <text class="note" style="top: 330px;">未经其他机型验证，后果自负</text>
-    <text class="backTip">← 左滑返回</text>
+    <div class="wrap" style="left: {{shift}}px;">
+      <text class="title">关于彩灯</text>
+      <div class="card">
+        <div class="cardLeft">
+          <div class="rainbow">
+            <text class="rb" style="color: #FF5C5C;">彩</text>
+            <text class="rb" style="color: #FFA94D;">灯</text>
+            <text class="rb" style="color: #FFD166;">L</text>
+            <text class="rb" style="color: #7FE07F;">a</text>
+            <text class="rb" style="color: #4FC3F7;">n</text>
+            <text class="rb" style="color: #8B7CF6;">t</text>
+            <text class="rb" style="color: #FF6BCB;">e</text>
+            <text class="rb" style="color: #6EE7D8;">r</text>
+          </div>
+          <text class="intro">点到哪里，亮到哪里</text>
+          <text class="ver">版本 1.5.0</text>
+        </div>
+        <image class="appIcon" src="/common/images/logo.png"></image>
+      </div>
+      <text class="h2" style="top: 320px;">开发组</text>
+      <text class="body" style="top: 356px;">Halvamazd</text>
+      <text class="h2" style="top: 404px;">说明</text>
+      <text class="body" style="top: 440px;">小米手环 9 Pro 测试作品，未经其他机型验证</text>
+    </div>
   </div>
 </template>
 
@@ -16,60 +33,109 @@
     height: 480px;
     position: relative;
     background-color: #000000;
-    align-items: center;
+    overflow: hidden;
+  }
+  .wrap {
+    position: absolute;
+    top: 0;
+    width: 336px;
+    height: 480px;
   }
   .title {
     position: absolute;
     left: 0;
-    top: 40px;
+    top: 36px;
     width: 336px;
     text-align: center;
     color: #ffffff;
-    font-size: 22px;
-  }
-  .appName {
-    position: absolute;
-    left: 0;
-    top: 130px;
-    width: 336px;
-    text-align: center;
-    color: #FFD166;
     font-size: 26px;
   }
-  .line {
+  .card {
     position: absolute;
-    left: 0;
-    width: 336px;
-    text-align: center;
-    color: #ffffff;
-    font-size: 19px;
+    left: 20px;
+    top: 108px;
+    width: 296px;
+    height: 180px;
+    border-radius: 24px;
+    background-color: #161616;
+    flex-direction: row;
+    align-items: center;
   }
-  .note {
-    position: absolute;
-    left: 0;
-    width: 336px;
-    text-align: center;
-    color: #8a8a8a;
+  .cardLeft {
+    width: 186px;
+    height: 180px;
+    padding-left: 18px;
+    justify-content: center;
+  }
+  .rainbow {
+    flex-direction: row;
+    align-items: center;
+  }
+  .rb {
+    font-size: 26px;
+  }
+  .intro {
+    color: #9a9a9a;
     font-size: 14px;
+    margin-top: 8px;
   }
-  .backTip {
+  .ver {
+    color: #ffffff;
+    font-size: 16px;
+    margin-top: 6px;
+  }
+  .appIcon {
+    width: 86px;
+    height: 86px;
+    border-radius: 20px;
+  }
+  .h2 {
     position: absolute;
-    left: 0;
-    top: 448px;
-    width: 336px;
-    text-align: center;
-    color: #6a6a6a;
-    font-size: 13px;
+    left: 28px;
+    color: #8a8a8a;
+    font-size: 16px;
+  }
+  .body {
+    position: absolute;
+    left: 28px;
+    color: #ffffff;
+    font-size: 18px;
   }
 </style>
 
 <script>
   import router from '@system.router';
 
+  function easeOut(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
+  }
+
   export default {
+    private: {
+      shift: 336
+    },
     onInit() {
       this._sx = 0;
       this._sy = 0;
+      this._leaving = false;
+      var that = this;
+      setTimeout(function () {
+        var t0 = Date.now();
+        var step = function () {
+          var p = (Date.now() - t0) / 300;
+          if (p > 1) { p = 1; }
+          that.shift = 336 * (1 - easeOut(p));
+          if (p < 1) { that._inT = setTimeout(step, 16); }
+        };
+        step();
+      }, 30);
+    },
+    onDestroy() {
+      try {
+        if (this._inT) { clearTimeout(this._inT); }
+        if (this._outT) { clearTimeout(this._outT); }
+      } catch (e) {}
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
@@ -81,7 +147,7 @@
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
       if (dx > 65 && dy < 90) {
-        router.back();
+        this.backAnimated();
       }
     },
     getPoint(e) {
@@ -91,6 +157,27 @@
         if (e && typeof e.clientX === 'number') { return e; }
       } catch (err) {}
       return { clientX: 168, clientY: 240 };
+    },
+    backAnimated() {
+      if (this._leaving) { return; }
+      this._leaving = true;
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var p = (Date.now() - t0) / 260;
+          if (p > 1) { p = 1; }
+          that.shift = 336 * easeOut(p);
+          if (p < 1) {
+            that._outT = setTimeout(step, 16);
+          } else {
+            router.back();
+          }
+        } catch (e) {
+          router.back();
+        }
+      };
+      step();
     }
   };
 </script>

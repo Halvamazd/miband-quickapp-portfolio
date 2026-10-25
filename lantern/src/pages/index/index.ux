@@ -20,7 +20,7 @@
   }
   .hint {
     color: #ffffff;
-    font-size: 16px;
+    font-size: 18px;
   }
 </style>
 
@@ -34,7 +34,7 @@
   var PAUSE_MS = 180;
   var GROW_MS = 620;
   var START_R = 20;
-  var MAX_R = 340;
+  var MAX_R = 650;
   var STEP_MS = 16;
 
   function easeOut(t) {
@@ -96,7 +96,6 @@
       this._navLock = false;
       this._lpFired = false;
       this.finishNow();
-      this.showHint = true;
       this.bgColor = '#000000';
     },
     onHide() {
@@ -106,7 +105,6 @@
       this.finishNow();
     },
     onTouchStart(e) {
-      this._t0 = Date.now();
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;

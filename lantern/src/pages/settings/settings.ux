@@ -1,25 +1,24 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
-    <div class="titleBar" style="left: {{titleX}}px; top: 56px;">
+    <div class="titleBar" style="left: {{titleX}}px; top: 52px;">
       <div class="titleInner"><text class="title">设置</text></div>
     </div>
-    <div class="row" style="left: {{x0}}px; top: 128px; opacity: {{o0}};" onclick="goColor">
+    <div class="row" style="left: {{x0}}px; top: 132px;" onclick="goColor">
       <div class="rowInner"><text class="rowLabel">自定义颜色</text><text class="rowArrow">›</text></div>
     </div>
-    <div class="row" style="left: {{x1}}px; top: 198px; opacity: {{o1}};" onclick="goBright">
+    <div class="row" style="left: {{x1}}px; top: 206px;" onclick="goBright">
       <div class="rowInner"><text class="rowLabel">屏幕亮度</text><text class="rowArrow">›</text></div>
     </div>
-    <div class="row" style="left: {{x2}}px; top: 268px; opacity: {{o2}};" onclick="toggleKeep">
+    <div class="row" style="left: {{x2}}px; top: 280px;" onclick="toggleKeep">
       <div class="rowInner">
         <text class="rowLabel">屏幕常亮</text>
         <div class="track" style="background-color: {{swBg}};"><div class="dot" style="left: {{swDotX}}px;"></div></div>
       </div>
     </div>
-    <div class="row" style="left: {{x3}}px; top: 338px; opacity: {{o3}};" onclick="goAbout">
+    <div class="row" style="left: {{x3}}px; top: 354px;" onclick="goAbout">
       <div class="rowInner"><text class="rowLabel">关于</text><text class="rowArrow">›</text></div>
     </div>
     <text if="{{msg}}" class="msg">{{msg}}</text>
-    <text class="backTip">← 左滑返回</text>
   </div>
 </template>
 
@@ -43,61 +42,52 @@
   }
   .title {
     color: #ffffff;
-    font-size: 24px;
+    font-size: 26px;
   }
   .row {
     position: absolute;
     width: 336px;
-    height: 60px;
+    height: 64px;
     align-items: center;
     justify-content: center;
   }
   .rowInner {
-    width: 288px;
-    height: 60px;
+    width: 292px;
+    height: 64px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
   .rowLabel {
     color: #ffffff;
-    font-size: 22px;
+    font-size: 24px;
   }
   .rowArrow {
     color: #9a9a9a;
-    font-size: 28px;
+    font-size: 30px;
   }
   .track {
     position: relative;
-    width: 64px;
-    height: 34px;
-    border-radius: 17px;
+    width: 68px;
+    height: 36px;
+    border-radius: 18px;
   }
   .dot {
     position: absolute;
     top: 3px;
-    width: 28px;
-    height: 28px;
-    border-radius: 14px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
     background-color: #ffffff;
   }
   .msg {
     position: absolute;
     left: 0;
-    top: 412px;
+    top: 430px;
     width: 336px;
     text-align: center;
     color: #ff6b6b;
-    font-size: 14px;
-  }
-  .backTip {
-    position: absolute;
-    left: 0;
-    top: 442px;
-    width: 336px;
-    text-align: center;
-    color: #6a6a6a;
-    font-size: 13px;
+    font-size: 15px;
   }
 </style>
 
@@ -117,24 +107,51 @@
       x1: 336,
       x2: 336,
       x3: 336,
-      o0: 0,
-      o1: 0,
-      o2: 0,
-      o3: 0,
-      keepOn: false,
-      swBg: '#4A4A4A',
-      swDotX: 3,
+      keepOn: true,
+      swBg: '#34C759',
+      swDotX: 35,
       msg: ''
     },
     onInit() {
       this._sx = 0;
       this._sy = 0;
-    },
-    onShow() {
-      this.startList();
+      this._nav = false;
+      this._leaving = false;
+      var that = this;
+      setTimeout(function () { that.startList(); }, 30);
+      this.defaultKeepOn();
     },
     onDestroy() {
       this.keepOff();
+      this.clearTimers();
+    },
+    clearTimers() {
+      try {
+        if (this._listT) { clearTimeout(this._listT); this._listT = null; }
+        if (this._backT) { clearTimeout(this._backT); this._backT = null; }
+      } catch (e) {}
+    },
+    defaultKeepOn() {
+      var that = this;
+      try {
+        brightness.setKeepScreenOn({
+          keepScreenOn: true,
+          success: function () {
+            that.keepOn = true;
+            that.swBg = '#34C759';
+            that.swDotX = 35;
+          },
+          fail: function () {
+            that.keepOn = false;
+            that.swBg = '#4A4A4A';
+            that.swDotX = 3;
+          }
+        });
+      } catch (e) {
+        this.keepOn = false;
+        this.swBg = '#4A4A4A';
+        this.swDotX = 3;
+      }
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
@@ -146,7 +163,7 @@
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
       if (dx > 65 && dy < 90) {
-        router.back();
+        this.backAnimated();
       }
     },
     getPoint(e) {
@@ -158,20 +175,12 @@
       return { clientX: 168, clientY: 240 };
     },
     startList() {
+      var that = this;
       this.titleX = -336;
       this.x0 = 336;
       this.x1 = 336;
       this.x2 = 336;
       this.x3 = 336;
-      this.o0 = 1;
-      this.o1 = 1;
-      this.o2 = 1;
-      this.o3 = 1;
-      this.msg = '';
-      this.keepOn = false;
-      this.swBg = '#4A4A4A';
-      this.swDotX = 3;
-      var that = this;
       var t0 = Date.now();
       var step = function () {
         try {
@@ -198,13 +207,46 @@
       };
       step();
     },
+    backAnimated() {
+      if (this._leaving) { return; }
+      this._leaving = true;
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var t = Date.now() - t0;
+          var p = t / 280;
+          if (p > 1) { p = 1; }
+          var e = easeOut(p);
+          that.titleX = -336 * e;
+          that.x0 = 336 * e;
+          that.x1 = 336 * e;
+          that.x2 = 336 * e;
+          that.x3 = 336 * e;
+          if (p < 1) {
+            that._backT = setTimeout(step, 16);
+          } else {
+            router.back();
+          }
+        } catch (err) {
+          router.back();
+        }
+      };
+      step();
+    },
     goColor() {
+      if (this._nav) { return; }
+      this._nav = true;
       router.push({ uri: '/pages/color' });
     },
     goBright() {
+      if (this._nav) { return; }
+      this._nav = true;
       router.push({ uri: '/pages/brightness' });
     },
     goAbout() {
+      if (this._nav) { return; }
+      this._nav = true;
       router.push({ uri: '/pages/about' });
     },
     toggleKeep() {
@@ -216,7 +258,7 @@
           success: function () {
             that.keepOn = target;
             that.swBg = target ? '#34C759' : '#4A4A4A';
-            that.swDotX = target ? 33 : 3;
+            that.swDotX = target ? 35 : 3;
             that.msg = '';
           },
           fail: function () {

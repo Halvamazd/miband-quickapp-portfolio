@@ -1,14 +1,15 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
-    <text class="title">屏幕亮度</text>
-    <div class="barZone">
-      <div class="bar">
-        <div class="fill" style="height: {{fillH}}px;"></div>
-        <text class="sun">☀</text>
+    <div class="wrap" style="left: {{shift}}px;">
+      <text class="title">屏幕亮度</text>
+      <div class="barZone">
+        <div class="bar">
+          <div class="fill" style="height: {{fillH}}px;"></div>
+          <text class="sun">☀</text>
+        </div>
       </div>
+      <text if="{{msg}}" class="msg">{{msg}}</text>
     </div>
-    <text if="{{msg}}" class="msg">{{msg}}</text>
-    <text class="backTip">← 左滑返回</text>
   </div>
 </template>
 
@@ -18,66 +19,64 @@
     height: 480px;
     position: relative;
     background-color: #000000;
+    overflow: hidden;
+  }
+  .wrap {
+    position: absolute;
+    top: 0;
+    width: 336px;
+    height: 480px;
   }
   .title {
     position: absolute;
     left: 0;
-    top: 36px;
+    top: 40px;
     width: 336px;
     text-align: center;
     color: #ffffff;
-    font-size: 22px;
+    font-size: 24px;
   }
   .barZone {
     position: absolute;
     left: 0;
-    top: 96px;
+    top: 100px;
     width: 336px;
-    height: 320px;
+    height: 330px;
     align-items: center;
     justify-content: center;
   }
   .bar {
     position: relative;
-    width: 64px;
-    height: 320px;
-    border-radius: 32px;
+    width: 72px;
+    height: 330px;
+    border-radius: 36px;
     background-color: #3a3a3a;
   }
   .fill {
     position: absolute;
     left: 0;
     bottom: 0;
-    width: 64px;
-    border-radius: 32px;
+    width: 72px;
+    border-radius: 36px;
     background-color: #ffffff;
   }
   .sun {
     position: absolute;
     left: 0;
-    bottom: 10px;
-    width: 64px;
+    bottom: 12px;
+    width: 72px;
     text-align: center;
     color: #3a3a3a;
-    font-size: 20px;
+    font-size: 24px;
   }
   .msg {
     position: absolute;
     left: 0;
-    top: 428px;
+    top: 438px;
     width: 336px;
     text-align: center;
     color: #ff6b6b;
-    font-size: 14px;
-  }
-  .backTip {
-    position: absolute;
-    left: 0;
-    top: 448px;
-    width: 336px;
-    text-align: center;
-    color: #6a6a6a;
-    font-size: 13px;
+    font-size: 15px;
   }
 </style>
 
@@ -85,19 +84,43 @@
   import router from '@system.router';
   import brightness from '@system.brightness';
 
-  var TOP = 96;
-  var HEIGHT = 320;
+  var TOP = 100;
+  var HEIGHT = 330;
+
+  function easeOut(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
+  }
 
   export default {
     private: {
+      shift: 336,
       val: 200,
-      fillH: 251,
+      fillH: 259,
       msg: ''
     },
     onInit() {
       this._sx = 0;
       this._sy = 0;
       this._drag = false;
+      this._leaving = false;
+      var that = this;
+      setTimeout(function () {
+        var t0 = Date.now();
+        var step = function () {
+          var p = (Date.now() - t0) / 300;
+          if (p > 1) { p = 1; }
+          that.shift = 336 * (1 - easeOut(p));
+          if (p < 1) { that._inT = setTimeout(step, 16); }
+        };
+        step();
+      }, 30);
+    },
+    onDestroy() {
+      try {
+        if (this._inT) { clearTimeout(this._inT); }
+        if (this._outT) { clearTimeout(this._outT); }
+      } catch (e) {}
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
@@ -123,7 +146,7 @@
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
       if (dx > 65 && dy < 90) {
-        router.back();
+        this.backAnimated();
       }
     },
     getPoint(e) {
@@ -133,6 +156,27 @@
         if (e && typeof e.clientX === 'number') { return e; }
       } catch (err) {}
       return { clientX: 168, clientY: 240 };
+    },
+    backAnimated() {
+      if (this._leaving) { return; }
+      this._leaving = true;
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var p = (Date.now() - t0) / 260;
+          if (p > 1) { p = 1; }
+          that.shift = 336 * easeOut(p);
+          if (p < 1) {
+            that._outT = setTimeout(step, 16);
+          } else {
+            router.back();
+          }
+        } catch (e) {
+          router.back();
+        }
+      };
+      step();
     },
     setByY(y) {
       var v = (TOP + HEIGHT - y) / HEIGHT * 255;

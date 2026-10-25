@@ -1,8 +1,8 @@
 {
-  "package": "com.halvamazd.lantern",
+  "package": "com.halvamazd.lantern2",
   "name": "彩灯",
-  "versionName": "1.4.0",
-  "versionCode": 5,
+  "versionName": "1.5.0",
+  "versionCode": 6,
   "minPlatformVersion": 1000,
   "icon": "/common/images/logo.png",
   "deviceTypeList": [
@@ -24,16 +24,20 @@
         "component": "index"
       },
       "pages/settings": {
-        "component": "settings"
+        "component": "settings",
+        "launchMode": "singleTask"
       },
       "pages/brightness": {
-        "component": "brightness"
+        "component": "brightness",
+        "launchMode": "singleTask"
       },
       "pages/about": {
-        "component": "about"
+        "component": "about",
+        "launchMode": "singleTask"
       },
       "pages/color": {
-        "component": "color"
+        "component": "color",
+        "launchMode": "singleTask"
       }
     }
   },

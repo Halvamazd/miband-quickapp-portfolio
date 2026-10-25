@@ -1,9 +1,10 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
-    <text class="title">自定义颜色</text>
-    <text class="big">敬请期待</text>
-    <text class="note">下个版本开发中</text>
-    <text class="backTip">← 左滑返回</text>
+    <div class="wrap" style="left: {{shift}}px;">
+      <text class="title">自定义颜色</text>
+      <text class="big">敬请期待</text>
+      <text class="note">下个版本开发中</text>
+    </div>
   </div>
 </template>
 
@@ -13,7 +14,13 @@
     height: 480px;
     position: relative;
     background-color: #000000;
-    align-items: center;
+    overflow: hidden;
+  }
+  .wrap {
+    position: absolute;
+    top: 0;
+    width: 336px;
+    height: 480px;
   }
   .title {
     position: absolute;
@@ -22,7 +29,7 @@
     width: 336px;
     text-align: center;
     color: #ffffff;
-    font-size: 22px;
+    font-size: 24px;
   }
   .big {
     position: absolute;
@@ -31,7 +38,7 @@
     width: 336px;
     text-align: center;
     color: #FFD166;
-    font-size: 30px;
+    font-size: 32px;
   }
   .note {
     position: absolute;
@@ -40,26 +47,43 @@
     width: 336px;
     text-align: center;
     color: #8a8a8a;
-    font-size: 15px;
-  }
-  .backTip {
-    position: absolute;
-    left: 0;
-    top: 448px;
-    width: 336px;
-    text-align: center;
-    color: #6a6a6a;
-    font-size: 13px;
+    font-size: 16px;
   }
 </style>
 
 <script>
   import router from '@system.router';
 
+  function easeOut(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
+  }
+
   export default {
+    private: {
+      shift: 336
+    },
     onInit() {
       this._sx = 0;
       this._sy = 0;
+      this._leaving = false;
+      var that = this;
+      setTimeout(function () {
+        var t0 = Date.now();
+        var step = function () {
+          var p = (Date.now() - t0) / 300;
+          if (p > 1) { p = 1; }
+          that.shift = 336 * (1 - easeOut(p));
+          if (p < 1) { that._inT = setTimeout(step, 16); }
+        };
+        step();
+      }, 30);
+    },
+    onDestroy() {
+      try {
+        if (this._inT) { clearTimeout(this._inT); }
+        if (this._outT) { clearTimeout(this._outT); }
+      } catch (e) {}
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
@@ -71,7 +95,7 @@
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
       if (dx > 65 && dy < 90) {
-        router.back();
+        this.backAnimated();
       }
     },
     getPoint(e) {
@@ -81,6 +105,27 @@
         if (e && typeof e.clientX === 'number') { return e; }
       } catch (err) {}
       return { clientX: 168, clientY: 240 };
+    },
+    backAnimated() {
+      if (this._leaving) { return; }
+      this._leaving = true;
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var p = (Date.now() - t0) / 260;
+          if (p > 1) { p = 1; }
+          that.shift = 336 * easeOut(p);
+          if (p < 1) {
+            that._outT = setTimeout(step, 16);
+          } else {
+            router.back();
+          }
+        } catch (e) {
+          router.back();
+        }
+      };
+      step();
     }
   };
 </script>
