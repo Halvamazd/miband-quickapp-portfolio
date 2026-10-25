@@ -218,7 +218,9 @@
       if (this._done) { return; }
       this._done = true;
       try { vibrator.vibrate({ mode: 'short' }); } catch (e) {}
-      this.getS().pendingColor = this.color;
+      var S = this.getS();
+      S.lockColor = true;
+      S.pendingColor = this.color;
       router.push({ uri: '/pages/index' });
     }
   };
