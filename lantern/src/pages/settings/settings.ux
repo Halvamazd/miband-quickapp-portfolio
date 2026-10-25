@@ -100,28 +100,11 @@
 <script>
   import router from '@system.router';
   import brightness from '@system.brightness';
-  import storage from '@system.storage';
+  import state from '../../common/state.js';
 
   function easeOut(t) {
     var u = 1 - t;
     return 1 - u * u * u;
-  }
-
-  function getPref(key, def, cb) {
-    try {
-      storage.get({
-        key: key,
-        success: function (res) {
-          var v = res && res.data;
-          cb((v === undefined || v === null || v === '') ? def : v);
-        },
-        fail: function () { cb(def); }
-      });
-    } catch (e) { cb(def); }
-  }
-
-  function setPref(key, val) {
-    try { storage.set({ key: key, value: val, success: function () {}, fail: function () {} }); } catch (e) {}
   }
 
   export default {
@@ -145,35 +128,22 @@
       this._sy = 0;
       this._nav = false;
       this._leaving = false;
-      this.keepOn = true;
-      this.swBg = '#34C759';
-      this.swDotX = 35;
+      this.syncState();
       var that = this;
       setTimeout(function () { that.startList(); }, 30);
-      this.loadPrefs();
     },
     onShow() {
       this._nav = false;
       this._leaving = false;
-      this.loadPrefs();
+      this.syncState();
     },
-    loadPrefs() {
-      var that = this;
-      getPref('lockColor', '0', function (v) {
-        var on = (v === '1' || v === 1 || v === true);
-        that.lockOn = on;
-        that.lockBg = on ? '#34C759' : '#4A4A4A';
-        that.lockDotX = on ? 35 : 3;
-      });
-      getPref('keepOn', '1', function (v) {
-        var on = (v === '1' || v === 1 || v === true);
-        that.keepOn = on;
-        that.swBg = on ? '#34C759' : '#4A4A4A';
-        that.swDotX = on ? 35 : 3;
-        if (on) {
-          try { brightness.setKeepScreenOn({ keepScreenOn: true, success: function () {}, fail: function () {} }); } catch (e) {}
-        }
-      });
+    syncState() {
+      this.lockOn = state.lockColor;
+      this.lockBg = state.lockColor ? '#34C759' : '#4A4A4A';
+      this.lockDotX = state.lockColor ? 35 : 3;
+      this.keepOn = state.keepOn;
+      this.swBg = state.keepOn ? '#34C759' : '#4A4A4A';
+      this.swDotX = state.keepOn ? 35 : 3;
     },
     onTouchStart(e) {
       var p = this.getPoint(e);
@@ -274,23 +244,18 @@
       router.push({ uri: '/pages/about' });
     },
     toggleLock() {
-      var target = !this.lockOn;
-      this.lockOn = target;
-      this.lockBg = target ? '#34C759' : '#4A4A4A';
-      this.lockDotX = target ? 35 : 3;
-      setPref('lockColor', target ? '1' : '0');
+      state.lockColor = !state.lockColor;
+      this.syncState();
     },
     toggleKeep() {
       var that = this;
-      var target = !this.keepOn;
+      var target = !state.keepOn;
       try {
         brightness.setKeepScreenOn({
           keepScreenOn: target,
           success: function () {
-            that.keepOn = target;
-            that.swBg = target ? '#34C759' : '#4A4A4A';
-            that.swDotX = target ? 35 : 3;
-            setPref('keepOn', target ? '1' : '0');
+            state.keepOn = target;
+            that.syncState();
             that.msg = '';
           },
           fail: function () {

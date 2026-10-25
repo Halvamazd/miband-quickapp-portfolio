@@ -1,16 +1,15 @@
 {
   "package": "com.halvamazd.lantern2",
   "name": "彩灯",
-  "versionName": "1.6.0",
-  "versionCode": 10,
+  "versionName": "1.6.1",
+  "versionCode": 11,
   "minPlatformVersion": 1000,
   "icon": "/common/images/logo.png",
   "deviceTypeList": ["watch"],
   "features": [
     { "name": "system.vibrator" },
     { "name": "system.brightness" },
-    { "name": "system.router" },
-    { "name": "system.storage" }
+    { "name": "system.router" }
   ],
   "config": { "logLevel": "log", "designWidth": 336 },
   "router": {

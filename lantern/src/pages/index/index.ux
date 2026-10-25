@@ -34,7 +34,7 @@
   import vibrator from '@system.vibrator';
   import router from '@system.router';
   import brightness from '@system.brightness';
-  import storage from '@system.storage';
+  import state from '../../common/state.js';
 
   var SCREEN_W = 336;
   var SCREEN_H = 480;
@@ -73,29 +73,14 @@
     var c = (1 - Math.abs(2 * l - 1)) * s;
     var x = c * (1 - Math.abs((h / 60) % 2 - 1));
     var m = l - c / 2;
-    var r = 0;
-    var g = 0;
-    var b = 0;
-    if (h < 60) { r = c; g = x; b = 0; }
-    else if (h < 120) { r = x; g = c; b = 0; }
-    else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; }
-    else if (h < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
+    var r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
     return '#' + hex2(Math.round((r + m) * 255)) + hex2(Math.round((g + m) * 255)) + hex2(Math.round((b + m) * 255));
-  }
-
-  function getPref(key, def, cb) {
-    try {
-      storage.get({
-        key: key,
-        success: function (res) {
-          var v = res && res.data;
-          cb((v === undefined || v === null || v === '') ? def : v);
-        },
-        fail: function () { cb(def); }
-      });
-    } catch (e) { cb(def); }
   }
 
   export default {
@@ -127,7 +112,16 @@
       this._playing = false;
       this.ballOn = false;
       this.maskOn = false;
-      this.loadPrefs();
+      this._lock = state.lockColor;
+      var that = this;
+      if (state.keepOn) {
+        try { brightness.setKeepScreenOn({ keepScreenOn: true, success: function () {}, fail: function () {} }); } catch (e) {}
+      }
+      if (state.pendingColor) {
+        var c = state.pendingColor;
+        state.pendingColor = '';
+        setTimeout(function () { that.paint(168, 216, c); }, 60);
+      }
     },
     onHide() {
       this.finishNow();
@@ -139,32 +133,6 @@
     },
     keepOff() {
       try { brightness.setKeepScreenOn({ keepScreenOn: false, success: function () {}, fail: function () {} }); } catch (e) {}
-    },
-    loadPrefs() {
-      var that = this;
-      getPref('keepOn', '1', function (v) {
-        if (v === '1' || v === 1 || v === true) {
-          try { brightness.setKeepScreenOn({ keepScreenOn: true, success: function () {}, fail: function () {} }); } catch (e) {}
-        }
-      });
-      getPref('lockColor', '0', function (v) {
-        that._lock = (v === '1' || v === 1 || v === true);
-      });
-      getPref('pendingColor', '', function (v) {
-        if (typeof v === 'string' && v.length === 7 && v.charAt(0) === '#') {
-          getPref('pendingHue', '0', function (h) {
-            var hue = parseFloat(h) || 0;
-            try { storage.set({ key: 'pendingColor', value: '', success: function () {}, fail: function () {} }); } catch (e) {}
-            setTimeout(function () { that.arrive(v, hue); }, 60);
-          });
-        }
-      });
-    },
-    arrive(color, hue) {
-      var rad = hue * Math.PI / 180;
-      var x = 168 + Math.cos(rad) * 130;
-      var y = 216 + Math.sin(rad) * 130;
-      this.paint(x, y, color);
     },
     onTouchStart(e) {
       this.clearLp();
@@ -279,7 +247,7 @@
     paint(x, y, color) {
       try {
         if (typeof x !== 'number') { x = 168; }
-        if (typeof y !== 'number') { y = 240; }
+        if (typeof y !== 'number') { y = 216; }
         var rMax = Math.min(Math.sqrt(Math.max(
           x * x + y * y,
           (SCREEN_W - x) * (SCREEN_W - x) + y * y,

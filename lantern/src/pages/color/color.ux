@@ -3,10 +3,9 @@
     <div class="wrap" style="left: {{shift}}px;">
       <text class="title">自定义颜色</text>
       <image class="wheel" src="/common/images/wheel.png"></image>
-      <div class="preview" style="background-color: {{color}};"></div>
+      <div class="preview" style="background-color: {{color}};" onclick="confirm"></div>
       <div class="thumb" style="left: {{tx}}px; top: {{ty}}px;"></div>
-      <div class="btn cancel" onclick="cancel"><text class="btnText">取消</text></div>
-      <div class="btn confirm" onclick="confirm"><text class="btnText confirmText">确认</text></div>
+      <div class="btn" onclick="back"><text class="btnText">返回</text></div>
     </div>
   </div>
 </template>
@@ -37,17 +36,17 @@
   .wheel {
     position: absolute;
     left: 38px;
-    top: 86px;
+    top: 78px;
     width: 260px;
     height: 260px;
   }
   .preview {
     position: absolute;
-    left: 138px;
-    top: 186px;
-    width: 60px;
-    height: 60px;
-    border-radius: 30px;
+    left: 132px;
+    top: 192px;
+    width: 72px;
+    height: 72px;
+    border-radius: 36px;
   }
   .thumb {
     position: absolute;
@@ -58,37 +57,28 @@
   }
   .btn {
     position: absolute;
-    top: 384px;
-    height: 50px;
-    border-radius: 25px;
+    left: 68px;
+    top: 386px;
+    width: 200px;
+    height: 54px;
+    border-radius: 27px;
+    background-color: #3a3a3a;
     align-items: center;
     justify-content: center;
   }
-  .cancel {
-    left: 40px;
-    width: 112px;
-    background-color: #3a3a3a;
-  }
-  .confirm {
-    left: 184px;
-    width: 112px;
-    background-color: #FFD166;
-  }
   .btnText {
     color: #ffffff;
-    font-size: 20px;
-  }
-  .confirmText {
-    color: #101010;
+    font-size: 22px;
   }
 </style>
 
 <script>
   import router from '@system.router';
-  import storage from '@system.storage';
+  import vibrator from '@system.vibrator';
+  import state from '../../common/state.js';
 
   var CX = 168;
-  var CY = 216;
+  var CY = 208;
   var RING = 130;
 
   function easeOut(t) {
@@ -126,35 +116,18 @@
       hue: 0,
       color: '#ffd166',
       tx: 168,
-      ty: 216
+      ty: 208
     },
     onInit() {
       this._sx = 0;
       this._sy = 0;
       this._drag = false;
-      this._leaving = false;
+      this._done = false;
       var that = this;
       setTimeout(function () {
         that.slideIn();
-        that.loadHue();
+        that.setHue(state.lastHue || 0);
       }, 30);
-    },
-    loadHue() {
-      var that = this;
-      try {
-        storage.get({
-          key: 'lastHue',
-          success: function (res) {
-            var v = parseFloat(res && res.data);
-            if (!isNaN(v)) {
-              that.setHue(v);
-            } else {
-              that.setHue(0);
-            }
-          },
-          fail: function () { that.setHue(0); }
-        });
-      } catch (e) { this.setHue(0); }
     },
     slideIn() {
       var that = this;
@@ -189,7 +162,7 @@
       var dx = p.clientX - CX;
       var dy = p.clientY - CY;
       var d = Math.sqrt(dx * dx + dy * dy);
-      if (d >= RING - 40 && d <= RING + 30) {
+      if (d >= RING - 45 && d <= RING + 35) {
         this._drag = true;
         this.pick(p.clientX, p.clientY);
       }
@@ -199,21 +172,15 @@
       var p = this.getPoint(e);
       this.pick(p.clientX, p.clientY);
     },
-    onTouchEnd(e) {
-      if (this._drag) { this._drag = false; return; }
-      var p = this.getPoint(e);
-      var dx = p.clientX - this._sx;
-      var dy = Math.abs(p.clientY - this._sy);
-      if (dx > 65 && dy < 90) { this.cancel(); }
+    onTouchEnd() {
+      if (this._drag) { this._drag = false; }
     },
     pick(x, y) {
       var dx = x - CX;
       var dy = y - CY;
       var deg = Math.atan2(dy, dx) * 180 / Math.PI;
       this.setHue(deg);
-      try {
-        storage.set({ key: 'lastHue', value: String(this.hue), success: function () {}, fail: function () {} });
-      } catch (e) {}
+      state.lastHue = this.hue;
     },
     getPoint(e) {
       try {
@@ -223,9 +190,9 @@
       } catch (err) {}
       return { clientX: 168, clientY: 240 };
     },
-    cancel() {
-      if (this._leaving) { return; }
-      this._leaving = true;
+    back() {
+      if (this._done) { return; }
+      this._done = true;
       var that = this;
       var t0 = Date.now();
       var step = function () {
@@ -241,13 +208,10 @@
       step();
     },
     confirm() {
-      if (this._leaving) { return; }
-      this._leaving = true;
-      try {
-        storage.set({ key: 'pendingColor', value: this.color, success: function () {}, fail: function () {} });
-        storage.set({ key: 'pendingHue', value: String(this.hue), success: function () {}, fail: function () {} });
-        storage.set({ key: 'lastHue', value: String(this.hue), success: function () {}, fail: function () {} });
-      } catch (e) {}
+      if (this._done) { return; }
+      this._done = true;
+      try { vibrator.vibrate({ mode: 'short' }); } catch (e) {}
+      state.pendingColor = this.color;
       router.push({ uri: '/pages/index' });
     }
   };
