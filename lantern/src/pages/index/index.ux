@@ -1,7 +1,7 @@
 <template>
   <div class="root" style="background-color: {{bgColor}};" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
     <div if="{{ballOn}}" class="ball" style="left: {{bx}}px; top: {{by}}px; width: {{bw}}px; height: {{bw}}px; background-color: {{ballColor}};"></div>
-    <text if="{{showHint}}" class="hint">点击</text>
+    <text if="{{showHint}}" class="hint">点击/长按 屏幕</text>
     <div if="{{maskOn}}" class="mask" style="left: {{mx}}px; top: {{my}}px; width: {{mr2}}px; height: {{mr2}}px;"></div>
   </div>
 </template>
@@ -117,6 +117,10 @@
       }
     },
     onShow() {
+      this._settled = false;
+      var that0 = this;
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
       this._navLock = false;
       this._lpFired = false;
       this._moved = false;
@@ -147,6 +151,7 @@
       try { brightness.setKeepScreenOn({ keepScreenOn: false, success: function () {}, fail: function () {} }); } catch (e) {}
     },
     onTouchStart(e) {
+      if (!this._settled) { return; }
       this.clearLp();
       this._t0 = Date.now();
       var p = this.getPoint(e);
@@ -173,6 +178,7 @@
       }
     },
     onTouchEnd(e) {
+      if (!this._settled) { return; }
       this.clearLp();
       if (this._lpFired) { this._lpFired = false; return; }
       if (this._moved) { return; }

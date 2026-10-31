@@ -128,17 +128,23 @@
       this._leaving = false;
       this._animDone = false;
       this._firstShow = true;
+      this._settled = false;
       this.syncState();
       var that = this;
       setTimeout(function () { that.startList(); }, 30);
     },
     onShow() {
+      this._settled = false;
+      var that0 = this;
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
       this._nav = false;
       this._leaving = false;
       this.syncState();
       if (this._firstShow) { this._firstShow = false; } else { this.finishListAnim(); }
     },
     onHide() {
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
       this.finishListAnim();
     },
     finishListAnim() {
@@ -152,6 +158,7 @@
       this._animDone = true;
     },
     onBackPress() {
+      if (!this._settled) { return true; }
       if (!this._animDone) { this.finishListAnim(); }
       this.backAnimated();
       return true;
@@ -177,10 +184,12 @@
       this.swDotX = S.keepOn ? 35 : 3;
     },
     onTouchStart(e) {
+      if (!this._settled) { return; }
       this._sx = this.getPoint(e).clientX;
       this._sy = this.getPoint(e).clientY;
     },
     onTouchEnd(e) {
+      if (!this._settled) { return; }
       var p = this.getPoint(e);
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
@@ -260,18 +269,21 @@
       step();
     },
     goColor() {
+      if (!this._settled) { return; }
       if (!this._animDone) { this.finishListAnim(); }
       if (this._nav) { return; }
       this._nav = true;
       router.push({ uri: '/pages/color' });
     },
     goBright() {
+      if (!this._settled) { return; }
       if (!this._animDone) { this.finishListAnim(); }
       if (this._nav) { return; }
       this._nav = true;
       router.push({ uri: '/pages/brightness' });
     },
     goAbout() {
+      if (!this._settled) { return; }
       if (!this._animDone) { this.finishListAnim(); }
       if (this._nav) { return; }
       this._nav = true;

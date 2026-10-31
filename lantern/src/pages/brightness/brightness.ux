@@ -183,7 +183,14 @@
         });
       } catch (e) {}
     },
+    onShow() {
+      this._settled = false;
+      var that0 = this;
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+    },
     onBackPress() {
+      if (!this._settled) { return true; }
       this.backAnimated();
       return true;
     },
@@ -194,6 +201,7 @@
       } catch (e) {}
     },
     onTouchStart(e) {
+      if (!this._settled) { return; }
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;
@@ -208,6 +216,7 @@
       this.setByY(p.clientY);
     },
     onTouchEnd(e) {
+      if (!this._settled) { return; }
       if (this._drag) {
         this._drag = false;
         this.apply();
@@ -229,6 +238,7 @@
       return { clientX: 168, clientY: 240 };
     },
     backAnimated() {
+      if (!this._settled) { return; }
       if (this._leaving) { return; }
       this._leaving = true;
       var that = this;
@@ -260,14 +270,35 @@
     },
     apply() {
       var that = this;
+      var setV = function () {
+        try {
+          brightness.setValue({
+            value: that.val,
+            success: function () { that.msg = ''; },
+            fail: function () { that.msg = '亮度接口不可用'; }
+          });
+        } catch (e) {
+          that.msg = '亮度接口不可用';
+        }
+      };
       try {
-        brightness.setValue({
-          value: this.val,
-          success: function () { that.msg = ''; },
-          fail: function () { that.msg = '亮度接口不可用'; }
+        brightness.getMode({
+          success: function (res) {
+            var m = res && res.mode;
+            if (m === 0) {
+              setV();
+            } else {
+              brightness.setMode({
+                mode: 0,
+                success: function () { setTimeout(setV, 30); },
+                fail: setV
+              });
+            }
+          },
+          fail: setV
         });
       } catch (e) {
-        this.msg = '亮度接口不可用';
+        setV();
       }
     }
   };

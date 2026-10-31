@@ -138,7 +138,14 @@
         step();
       }, 30);
     },
+    onShow() {
+      this._settled = false;
+      var that0 = this;
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+    },
     onBackPress() {
+      if (!this._settled) { return true; }
       this.backAnimated();
       return true;
     },
@@ -149,11 +156,13 @@
       } catch (e) {}
     },
     onTouchStart(e) {
+      if (!this._settled) { return; }
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;
     },
     onTouchEnd(e) {
+      if (!this._settled) { return; }
       var p = this.getPoint(e);
       var dx = p.clientX - this._sx;
       var dy = Math.abs(p.clientY - this._sy);
@@ -170,6 +179,7 @@
       return { clientX: 168, clientY: 240 };
     },
     backAnimated() {
+      if (!this._settled) { return; }
       if (this._leaving) { return; }
       this._leaving = true;
       var that = this;

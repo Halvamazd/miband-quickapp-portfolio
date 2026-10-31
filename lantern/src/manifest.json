@@ -1,8 +1,8 @@
 {
   "package": "com.halvamazd.lantern2",
   "name": "彩灯",
-  "versionName": "1.7.2",
-  "versionCode": 15,
+  "versionName": "1.7.3",
+  "versionCode": 16,
   "minPlatformVersion": 1000,
   "icon": "/common/images/logo.png",
   "deviceTypeList": ["watch"],
@@ -19,7 +19,7 @@
       "pages/settings": { "component": "settings", "launchMode": "singleTask", "followHand": "disable" },
       "pages/brightness": { "component": "brightness", "launchMode": "singleTask", "followHand": "disable" },
       "pages/about": { "component": "about", "launchMode": "singleTask", "followHand": "disable" },
-      "pages/color": { "component": "color", "launchMode": "singleTask", "disableSwipeBack": true, "followHand": "disable" }
+      "pages/color": { "component": "color", "launchMode": "singleTask", "followHand": "disable" }
     }
   },
   "display": { "backgroundColor": "#000000" }

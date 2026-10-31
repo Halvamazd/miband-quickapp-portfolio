@@ -149,8 +149,15 @@
       };
       step();
     },
+    onShow() {
+      this._settled = false;
+      var that0 = this;
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+    },
     onBackPress() {
-      this.backAnimated();
+      if (!this._settled) { return true; }
+      this.back();
       return true;
     },
     onDestroy() {
@@ -169,6 +176,7 @@
       this.ty = CY + Math.sin(rad) * RING - 11;
     },
     onTouchStart(e) {
+      if (!this._settled) { return; }
       var p = this.getPoint(e);
       var dx = p.clientX - CX;
       var dy = p.clientY - CY;
@@ -184,6 +192,7 @@
       this.pick(p.clientX, p.clientY);
     },
     onTouchEnd() {
+      if (!this._settled) { return; }
       this._drag = false;
     },
     pick(x, y) {
