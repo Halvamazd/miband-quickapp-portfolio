@@ -1,6 +1,6 @@
 {
   "name": "com.halvamazd.lantern2",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "彩灯 - Xiaomi Band 9 Pro interactive color-lamp toy",
   "scripts": { "build": "aiot build", "release": "aiot release" },
   "devDependencies": { "aiot-toolkit": "^2.0.5" },

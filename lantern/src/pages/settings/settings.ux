@@ -48,7 +48,7 @@
   }
   .title {
     color: #ffffff;
-    font-size: 26px;
+    font-size: 30px;
   }
   .row {
     position: absolute;
@@ -66,11 +66,11 @@
   }
   .rowLabel {
     color: #ffffff;
-    font-size: 23px;
+    font-size: 27px;
   }
   .rowArrow {
     color: #9a9a9a;
-    font-size: 28px;
+    font-size: 30px;
   }
   .track {
     position: relative;
@@ -93,7 +93,7 @@
     width: 336px;
     text-align: center;
     color: #ff6b6b;
-    font-size: 15px;
+    font-size: 17px;
   }
 </style>
 

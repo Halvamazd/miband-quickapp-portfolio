@@ -14,7 +14,7 @@
           <text class="rb" style="color: #6EE7D8;">r</text>
         </div>
         <text class="intro">点到哪里，亮到哪里</text>
-        <text class="ver">版本 1.7.2</text>
+        <text class="ver">版本 1.7.4</text>
         <image class="appIcon" src="/common/images/logo.png"></image>
       </div>
       <text class="h2" style="top: 286px;">开发组</text>
@@ -47,7 +47,7 @@
     width: 336px;
     text-align: center;
     color: #ffffff;
-    font-size: 26px;
+    font-size: 30px;
   }
   .card {
     position: absolute;
@@ -66,21 +66,21 @@
     align-items: center;
   }
   .rb {
-    font-size: 24px;
+    font-size: 28px;
   }
   .intro {
     position: absolute;
     left: 20px;
     top: 66px;
     color: #9a9a9a;
-    font-size: 13px;
+    font-size: 16px;
   }
   .ver {
     position: absolute;
     left: 20px;
     top: 92px;
     color: #ffffff;
-    font-size: 15px;
+    font-size: 17px;
   }
   .appIcon {
     position: absolute;
@@ -94,19 +94,19 @@
     position: absolute;
     left: 28px;
     color: #8a8a8a;
-    font-size: 16px;
+    font-size: 19px;
   }
   .body {
     position: absolute;
     left: 28px;
     color: #ffffff;
-    font-size: 18px;
+    font-size: 21px;
   }
   .note {
     position: absolute;
     left: 28px;
     color: #ffffff;
-    font-size: 15px;
+    font-size: 17px;
   }
 </style>
 

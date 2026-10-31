@@ -31,7 +31,7 @@
     width: 336px;
     text-align: center;
     color: #ffffff;
-    font-size: 24px;
+    font-size: 28px;
   }
   .wheel {
     position: absolute;
@@ -68,7 +68,7 @@
   }
   .btnText {
     color: #ffffff;
-    font-size: 22px;
+    font-size: 26px;
   }
 </style>
 
@@ -156,8 +156,7 @@
       this._settleT = setTimeout(function () { that0._settled = true; }, 380);
     },
     onBackPress() {
-      if (!this._settled) { return true; }
-      this.back();
+      // 完全拦截系统返回，只允许底部“返回”按钮离开
       return true;
     },
     onDestroy() {

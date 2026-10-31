@@ -40,7 +40,7 @@
     width: 336px;
     text-align: center;
     color: #ffffff;
-    font-size: 24px;
+    font-size: 28px;
   }
   .barZone {
     position: absolute;
@@ -118,7 +118,7 @@
     width: 336px;
     text-align: center;
     color: #ff6b6b;
-    font-size: 15px;
+    font-size: 17px;
   }
 </style>
 
@@ -149,7 +149,6 @@
       var that = this;
       setTimeout(function () {
         that.slideIn();
-        that.readCurrent();
       }, 30);
     },
     slideIn() {
@@ -163,31 +162,56 @@
       };
       step();
     },
-    readCurrent() {
+    syncCurrent() {
       var that = this;
-      try {
-        brightness.getValue({
-          success: function (res) {
-            try {
-              var v = res && res.value;
-              if (typeof v === 'number') {
-                v = Math.round(v);
-                if (v < 0) { v = 0; }
-                if (v > 255) { v = 255; }
-                that.val = v;
-                that.fillH = HEIGHT * v / 255;
+      this._syncTry = 0;
+      var read = function () {
+        try {
+          brightness.getValue({
+            success: function (res) {
+              try {
+                var raw = res && res.value;
+                if (raw === undefined || raw === null || raw === '') { return; }
+                var v = Number(raw);
+                if (isFinite(v)) {
+                  v = Math.round(v);
+                  if (v < 0) { v = 0; }
+                  if (v > 255) { v = 255; }
+                  if (that._drag) { return; }
+                  that.val = v;
+                  that.fillH = HEIGHT * v / 255;
+                }
+              } catch (e2) {}
+            },
+            fail: function () {
+              if (that._syncTry < 2) {
+                that._syncTry++;
+                that._syncT = setTimeout(read, 120);
               }
-            } catch (e2) {}
+            }
+          });
+        } catch (e) {}
+      };
+      try {
+        brightness.getMode({
+          success: function (res) {
+            var m = res && res.mode;
+            that.autoMode = (m === 1);
+            read();
           },
-          fail: function () {}
+          fail: read
         });
-      } catch (e) {}
+      } catch (e) {
+        read();
+      }
     },
     onShow() {
       this._settled = false;
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      try { if (this._syncT) { clearTimeout(this._syncT); } } catch (e1) {}
       this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+      setTimeout(function () { that0.syncCurrent(); }, 40);
     },
     onBackPress() {
       if (!this._settled) { return true; }
@@ -198,6 +222,7 @@
       try {
         if (this._inT) { clearTimeout(this._inT); }
         if (this._outT) { clearTimeout(this._outT); }
+        if (this._syncT) { clearTimeout(this._syncT); }
       } catch (e) {}
     },
     onTouchStart(e) {
