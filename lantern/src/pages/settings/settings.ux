@@ -126,6 +126,8 @@
       this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
       this._nav = false;
       this._leaving = false;
+      this._animDone = false;
+      this._firstShow = true;
       this.syncState();
       var that = this;
       setTimeout(function () { that.startList(); }, 30);
@@ -134,6 +136,25 @@
       this._nav = false;
       this._leaving = false;
       this.syncState();
+      if (this._firstShow) { this._firstShow = false; } else { this.finishListAnim(); }
+    },
+    onHide() {
+      this.finishListAnim();
+    },
+    finishListAnim() {
+      try { if (this._listT) { clearTimeout(this._listT); this._listT = null; } } catch (e) {}
+      this.titleX = 0;
+      this.x0 = 0;
+      this.x1 = 0;
+      this.x2 = 0;
+      this.x3 = 0;
+      this.x4 = 0;
+      this._animDone = true;
+    },
+    onBackPress() {
+      if (!this._animDone) { this.finishListAnim(); }
+      this.backAnimated();
+      return true;
     },
     getS() {
       try {
@@ -205,12 +226,13 @@
             if (i === 4) { that.x4 = x; }
             if (p < 1) { all = false; }
           }
-          if (!all) { that._listT = setTimeout(step, 16); }
+          if (!all) { that._listT = setTimeout(step, 16); } else { that._animDone = true; }
         } catch (e) {}
       };
       step();
     },
     backAnimated() {
+      if (!this._animDone) { this.finishListAnim(); }
       if (this._leaving) { return; }
       this._leaving = true;
       var that = this;
@@ -238,16 +260,19 @@
       step();
     },
     goColor() {
+      if (!this._animDone) { this.finishListAnim(); }
       if (this._nav) { return; }
       this._nav = true;
       router.push({ uri: '/pages/color' });
     },
     goBright() {
+      if (!this._animDone) { this.finishListAnim(); }
       if (this._nav) { return; }
       this._nav = true;
       router.push({ uri: '/pages/brightness' });
     },
     goAbout() {
+      if (!this._animDone) { this.finishListAnim(); }
       if (this._nav) { return; }
       this._nav = true;
       router.push({ uri: '/pages/about' });

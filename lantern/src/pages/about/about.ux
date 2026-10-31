@@ -14,7 +14,7 @@
           <text class="rb" style="color: #6EE7D8;">r</text>
         </div>
         <text class="intro">点到哪里，亮到哪里</text>
-        <text class="ver">版本 1.7.0</text>
+        <text class="ver">版本 1.7.2</text>
         <image class="appIcon" src="/common/images/logo.png"></image>
       </div>
       <text class="h2" style="top: 286px;">开发组</text>
@@ -137,6 +137,10 @@
         };
         step();
       }, 30);
+    },
+    onBackPress() {
+      this.backAnimated();
+      return true;
     },
     onDestroy() {
       try {

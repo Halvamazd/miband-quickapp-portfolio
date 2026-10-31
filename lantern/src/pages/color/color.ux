@@ -149,6 +149,10 @@
       };
       step();
     },
+    onBackPress() {
+      this.backAnimated();
+      return true;
+    },
     onDestroy() {
       try {
         if (this._inT) { clearTimeout(this._inT); }
