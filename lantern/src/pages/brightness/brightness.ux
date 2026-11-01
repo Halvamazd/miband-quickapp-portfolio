@@ -285,8 +285,8 @@
     backAnimated() {
       if (!this._settled) { return; }
       if (this._leaving) { return; }
-      if (this.isEco()) { router.back(); return; }
       this._leaving = true;
+      if (this.isEco()) { router.back(); return; }
       var that = this;
       var t0 = Date.now();
       var step = function () {
