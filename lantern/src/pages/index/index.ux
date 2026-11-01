@@ -284,7 +284,7 @@
               try {
                 brightness.setMode({
                   mode: 0,
-                  success: function () { setTimeout(setMax, 100); },
+                  success: function () { setMax(); },
                   fail: setMax
                 });
               } catch (e) {

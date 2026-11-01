@@ -21,7 +21,7 @@
         <div class="track" style="background-color: {{ecoBg}};"><div class="dot" style="left: {{ecoDotX}}px;"></div></div>
       </div>
     </div>
-    <text class="note">设置仅本次运行有效</text>
+    <text class="note">偏好自动保存</text>
   </div>
 </template>
 
@@ -93,6 +93,8 @@
 
 <script>
   import router from '@system.router';
+  import storage from '@system.storage';
+  var PREF_KEY = 'lantern_prefs_v1';
   function easeOut(t) {
     var u = 1 - t;
     return 1 - u * u * u;
@@ -121,6 +123,7 @@
       this._firstShow = true;
       this._settled = false;
       this.syncState();
+      this.loadPrefs();
       var that = this;
       if (this.isEco()) {
         this.finishListAnim();
@@ -177,6 +180,40 @@
       this.x1 = 0;
       this.x2 = 0;
       this._animDone = true;
+    },
+    loadPrefs() {
+      var that = this;
+      try {
+        storage.get({
+          key: PREF_KEY,
+          success: function (data) {
+            try {
+              var p = (typeof data === 'string') ? JSON.parse(data || '{}') : (data || {});
+              var S = that.getS();
+              if (typeof p.autoMaxBright === 'boolean') { S.autoMaxBright = p.autoMaxBright; }
+              if (typeof p.autoColorLock === 'boolean') { S.autoColorLock = p.autoColorLock; }
+              if (typeof p.ecoMode === 'boolean') { S.ecoMode = p.ecoMode; }
+              that.syncState();
+            } catch (e) {}
+          },
+          fail: function () {}
+        });
+      } catch (e) {}
+    },
+    persist() {
+      var S = this.getS();
+      try {
+        storage.set({
+          key: PREF_KEY,
+          value: JSON.stringify({
+            autoMaxBright: S.autoMaxBright !== false,
+            autoColorLock: S.autoColorLock !== false,
+            ecoMode: S.ecoMode === true
+          }),
+          success: function () {},
+          fail: function () {}
+        });
+      } catch (e) {}
     },
     onBackPress() {
       if (!this._settled) { return true; }
@@ -269,18 +306,21 @@
       var S = this.getS();
       var cur = S.autoMaxBright !== false;
       S.autoMaxBright = !cur;
+      this.persist();
       this.syncState();
     },
     toggleAutoLock() {
       var S = this.getS();
       var cur = S.autoColorLock !== false;
       S.autoColorLock = !cur;
+      this.persist();
       this.syncState();
     },
     toggleEco() {
       var S = this.getS();
       var cur = S.ecoMode === true;
       S.ecoMode = !cur;
+      this.persist();
       this.syncState();
     }
   };

@@ -1,5 +1,7 @@
 <script>
-export default {
+  import storage from '@system.storage';
+  var PREF_KEY = 'lantern_prefs_v1';
+  export default {
   data: {
     lantern: {
       lockColor: false,
@@ -13,6 +15,24 @@ export default {
   },
   onCreate() {
     console.log('[Lantern] onCreate');
+    var that = this;
+    try {
+      storage.get({
+        key: PREF_KEY,
+        success: function (data) {
+          try {
+            var p = (typeof data === 'string') ? JSON.parse(data || '{}') : (data || {});
+            var L = that.data && that.data.lantern;
+            if (!L && that.$def && that.$def.data) { L = that.$def.data.lantern; }
+            if (!L) { return; }
+            if (typeof p.autoMaxBright === 'boolean') { L.autoMaxBright = p.autoMaxBright; }
+            if (typeof p.autoColorLock === 'boolean') { L.autoColorLock = p.autoColorLock; }
+            if (typeof p.ecoMode === 'boolean') { L.ecoMode = p.ecoMode; }
+          } catch (e) {}
+        },
+        fail: function () {}
+      });
+    } catch (e) {}
   },
   onDestroy() {
     console.log('[Lantern] onDestroy');

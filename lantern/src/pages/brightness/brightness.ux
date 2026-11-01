@@ -125,15 +125,12 @@
 <script>
   import router from '@system.router';
   import brightness from '@system.brightness';
-
   var TOP = 100;
   var HEIGHT = 330;
-
   function easeOut(t) {
     var u = 1 - t;
     return 1 - u * u * u;
   }
-
   export default {
     private: {
       shift: 336,
@@ -146,6 +143,12 @@
       this._sy = 0;
       this._drag = false;
       this._leaving = false;
+      this._manualReady = false;
+      this._manualPending = false;
+      this._manualCb = null;
+      this._liveT = 0;
+      this._fillT = null;
+      this._pollT = null;
       var that = this;
       if (this.isEco()) {
         this.shift = 0;
@@ -181,7 +184,45 @@
       var S = this.getS();
       return S && S.ecoMode === true;
     },
-    syncCurrent() {
+    cancelVisual() {
+      try {
+        if (this._fillT) {
+          clearTimeout(this._fillT);
+          this._fillT = null;
+        }
+      } catch (e) {}
+    },
+    setVisual(v, animate) {
+      if (this._drag) { return; }
+      if (!animate || this.isEco()) {
+        this.cancelVisual();
+        this.val = v;
+        this.fillH = HEIGHT * v / 255;
+        return;
+      }
+      var that = this;
+      var from = this.val;
+      var to = v;
+      var t0 = Date.now();
+      this.cancelVisual();
+      var step = function () {
+        try {
+          var p = (Date.now() - t0) / 220;
+          if (p > 1) { p = 1; }
+          var e = easeOut(p);
+          var cur = Math.round(from + (to - from) * e);
+          that.val = cur;
+          that.fillH = HEIGHT * cur / 255;
+          if (p < 1) {
+            that._fillT = setTimeout(step, 16);
+          } else {
+            that._fillT = null;
+          }
+        } catch (err) {}
+      };
+      step();
+    },
+    syncCurrent(animate) {
       var that = this;
       this._syncTry = 0;
       var read = function () {
@@ -192,14 +233,13 @@
                 var raw = res && res.value;
                 if (raw === undefined || raw === null || raw === '') { return; }
                 var v = Number(raw);
-                if (isFinite(v)) {
-                  v = Math.round(v);
-                  if (v < 0) { v = 0; }
-                  if (v > 255) { v = 255; }
-                  if (that._drag) { return; }
-                  that.val = v;
-                  that.fillH = HEIGHT * v / 255;
-                }
+                if (!isFinite(v)) { return; }
+                v = Math.round(v);
+                if (v < 0) { v = 0; }
+                if (v > 255) { v = 255; }
+                if (that._drag) { return; }
+                if (animate === true && Math.abs(v - that.val) <= 1) { return; }
+                that.setVisual(v, animate === true);
               } catch (e2) {}
             },
             fail: function () {
@@ -224,14 +264,44 @@
         read();
       }
     },
+    startPoll() {
+      this.stopPoll();
+      var that = this;
+      var delay = this.isEco() ? 1000 : 500;
+      var tick = function () {
+        if (that._leaving) { return; }
+        if (!that._drag) {
+          that.syncCurrent(true);
+        }
+        that._pollT = setTimeout(tick, delay);
+      };
+      this._pollT = setTimeout(tick, delay);
+    },
+    stopPoll() {
+      try {
+        if (this._pollT) {
+          clearTimeout(this._pollT);
+          this._pollT = null;
+        }
+      } catch (e) {}
+    },
     onShow() {
       this._settled = false;
+      this._drag = false;
+      this._manualReady = false;
+      this._manualPending = false;
+      this._manualCb = null;
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
       try { if (this._syncT) { clearTimeout(this._syncT); } } catch (e1) {}
       var ecoNow = this.isEco();
       this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
-      setTimeout(function () { that0.syncCurrent(); }, 40);
+      setTimeout(function () { that0.syncCurrent(false); }, 40);
+      this.startPoll();
+    },
+    onHide() {
+      this.stopPoll();
+      this.cancelVisual();
     },
     onBackPress() {
       if (!this._settled) { return true; }
@@ -239,6 +309,8 @@
       return true;
     },
     onDestroy() {
+      this.stopPoll();
+      this.cancelVisual();
       try {
         if (this._inT) { clearTimeout(this._inT); }
         if (this._outT) { clearTimeout(this._outT); }
@@ -252,13 +324,16 @@
       this._sy = p.clientY;
       if (p.clientX >= 100 && p.clientX <= 236 && p.clientY >= TOP - 10 && p.clientY <= TOP + HEIGHT + 10) {
         this._drag = true;
+        this.cancelVisual();
         this.setByY(p.clientY);
+        this.liveApply(true);
       }
     },
     onTouchMove(e) {
       if (!this._drag) { return; }
       var p = this.getPoint(e);
       this.setByY(p.clientY);
+      this.liveApply(false);
     },
     onTouchEnd(e) {
       if (!this._settled) { return; }
@@ -286,6 +361,8 @@
       if (!this._settled) { return; }
       if (this._leaving) { return; }
       this._leaving = true;
+      this.stopPoll();
+      this.cancelVisual();
       if (this.isEco()) { router.back(); return; }
       var that = this;
       var t0 = Date.now();
@@ -306,6 +383,7 @@
       step();
     },
     setByY(y) {
+      this.cancelVisual();
       var v = (TOP + HEIGHT - y) / HEIGHT * 255;
       if (v < 0) { v = 0; }
       if (v > 255) { v = 255; }
@@ -313,6 +391,69 @@
       this.val = v;
       this.fillH = HEIGHT * v / 255;
       this.msg = '';
+    },
+    ensureManual(cb) {
+      if (this._manualReady) {
+        if (cb) { cb(); }
+        return;
+      }
+      if (this._manualPending) {
+        this._manualCb = cb;
+        return;
+      }
+      this._manualPending = true;
+      this._manualCb = cb;
+      var that = this;
+      var done = function () {
+        that._manualPending = false;
+        that._manualReady = true;
+        var f = that._manualCb;
+        that._manualCb = null;
+        if (f) { f(); }
+      };
+      try {
+        brightness.getMode({
+          success: function (res) {
+            var m = res && res.mode;
+            if (m === 0) {
+              done();
+            } else {
+              try {
+                brightness.setMode({
+                  mode: 0,
+                  success: done,
+                  fail: done
+                });
+              } catch (e) {
+                done();
+              }
+            }
+          },
+          fail: done
+        });
+      } catch (e) {
+        done();
+      }
+    },
+    liveApply(force) {
+      var now = Date.now();
+      if (!force && this._liveT && now - this._liveT < 100) { return; }
+      this._liveT = now;
+      var that = this;
+      var write = function () {
+        try {
+          brightness.setValue({
+            value: that.val,
+            success: function () {},
+            fail: function () {}
+          });
+        } catch (e) {}
+      };
+      if (this._manualReady) {
+        write();
+      } else {
+        this.ensureManual(write);
+      }
     },
     apply() {
       var that = this;
@@ -328,32 +469,7 @@
           that.msg = '亮度接口不可用';
         }
       };
-      var manual = function () {
-        try {
-          brightness.setMode({
-            mode: 0,
-            success: function () { setTimeout(function () { write(0); }, 120); },
-            fail: function () { write(0); }
-          });
-        } catch (e) {
-          write(0);
-        }
-      };
-      try {
-        brightness.getMode({
-          success: function (res) {
-            var m = res && res.mode;
-            if (m === 0) {
-              write(0);
-            } else {
-              manual();
-            }
-          },
-          fail: manual
-        });
-      } catch (e) {
-        manual();
-      }
+      this.ensureManual(function () { write(0); });
     },
     verify(target, attempt) {
       var that = this;
