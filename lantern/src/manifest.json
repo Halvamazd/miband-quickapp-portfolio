@@ -1,8 +1,8 @@
 {
   "package": "com.halvamazd.lantern2",
   "name": "彩灯",
-  "versionName": "1.9.0",
-  "versionCode": 20,
+  "versionName": "1.9.1",
+  "versionCode": 21,
   "minPlatformVersion": 1000,
   "icon": "/common/images/logo.png",
   "deviceTypeList": ["watch"],

@@ -2,9 +2,9 @@
   <div class="root" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
     <div class="wrap" style="left: {{shift}}px;">
       <text class="title">{{titleText}}</text>
-      <div class="barZone" if="{{showBar}}">
+      <div class="barZone">
         <div class="bar">
-          <div class="fill" style="height: {{fillH}}px;"></div>
+          <div class="fill" if="{{showFill}}" style="height: {{fillH}}px;"></div>
           <div class="sun">
             <div class="core"></div>
             <div class="ray rayT"></div>
@@ -135,10 +135,10 @@
     private: {
       shift: 336,
       val: 200,
-      fillH: 259,
+      fillH: 0,
       msg: '',
       titleText: '屏幕亮度',
-      showBar: true
+      showFill: false
     },
     onInit() {
       this._sx = 0;
@@ -149,8 +149,6 @@
       this._manualPending = false;
       this._manualCb = null;
       this._liveT = 0;
-      this._fillT = null;
-      this._pollT = null;
       var that = this;
       if (this.isEco()) {
         this.shift = 0;
@@ -189,47 +187,10 @@
     setModeLabel(auto) {
       this.autoMode = auto === true;
       this.titleText = auto ? '屏幕亮度 · 自动' : '屏幕亮度 · 手动';
-      this.showBar = auto !== true;
+      this.showFill = auto !== true;
+      if (auto === true) { this.fillH = 0; }
     },
-    cancelVisual() {
-      try {
-        if (this._fillT) {
-          clearTimeout(this._fillT);
-          this._fillT = null;
-        }
-      } catch (e) {}
-    },
-    setVisual(v, animate) {
-      if (this._drag) { return; }
-      if (!animate || this.isEco()) {
-        this.cancelVisual();
-        this.val = v;
-        this.fillH = HEIGHT * v / 255;
-        return;
-      }
-      var that = this;
-      var from = this.val;
-      var to = v;
-      var t0 = Date.now();
-      this.cancelVisual();
-      var step = function () {
-        try {
-          var p = (Date.now() - t0) / 220;
-          if (p > 1) { p = 1; }
-          var e = easeOut(p);
-          var cur = Math.round(from + (to - from) * e);
-          that.val = cur;
-          that.fillH = HEIGHT * cur / 255;
-          if (p < 1) {
-            that._fillT = setTimeout(step, 16);
-          } else {
-            that._fillT = null;
-          }
-        } catch (err) {}
-      };
-      step();
-    },
-    syncCurrent(animate) {
+    syncCurrent() {
       var that = this;
       this._syncTry = 0;
       var read = function () {
@@ -244,9 +205,8 @@
                 v = Math.round(v);
                 if (v < 0) { v = 0; }
                 if (v > 255) { v = 255; }
-                if (that._drag) { return; }
-                if (animate === true && Math.abs(v - that.val) <= 1) { return; }
-                that.setVisual(v, animate === true);
+                that.val = v;
+                that.fillH = that.showFill ? HEIGHT * v / 255 : 0;
               } catch (e2) {}
             },
             fail: function () {
@@ -265,32 +225,15 @@
             that.setModeLabel(m === 1);
             read();
           },
-          fail: read
+          fail: function () {
+            that.setModeLabel(false);
+            read();
+          }
         });
       } catch (e) {
+        this.setModeLabel(false);
         read();
       }
-    },
-    startPoll() {
-      this.stopPoll();
-      var that = this;
-      var delay = this.isEco() ? 1000 : 500;
-      var tick = function () {
-        if (that._leaving) { return; }
-        if (!that._drag) {
-          that.syncCurrent(true);
-        }
-        that._pollT = setTimeout(tick, delay);
-      };
-      this._pollT = setTimeout(tick, delay);
-    },
-    stopPoll() {
-      try {
-        if (this._pollT) {
-          clearTimeout(this._pollT);
-          this._pollT = null;
-        }
-      } catch (e) {}
     },
     onShow() {
       this._settled = false;
@@ -303,12 +246,7 @@
       try { if (this._syncT) { clearTimeout(this._syncT); } } catch (e1) {}
       var ecoNow = this.isEco();
       this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
-      setTimeout(function () { that0.syncCurrent(false); }, 40);
-      this.startPoll();
-    },
-    onHide() {
-      this.stopPoll();
-      this.cancelVisual();
+      setTimeout(function () { that0.syncCurrent(); }, 40);
     },
     onBackPress() {
       if (!this._settled) { return true; }
@@ -316,8 +254,6 @@
       return true;
     },
     onDestroy() {
-      this.stopPoll();
-      this.cancelVisual();
       try {
         if (this._inT) { clearTimeout(this._inT); }
         if (this._outT) { clearTimeout(this._outT); }
@@ -325,13 +261,12 @@
       } catch (e) {}
     },
     onTouchStart(e) {
-      if (!this._settled || !this.showBar) { return; }
+      if (!this._settled) { return; }
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;
       if (p.clientX >= 100 && p.clientX <= 236 && p.clientY >= TOP - 10 && p.clientY <= TOP + HEIGHT + 10) {
         this._drag = true;
-        this.cancelVisual();
         this.setByY(p.clientY);
         this.liveApply(true);
       }
@@ -368,8 +303,6 @@
       if (!this._settled) { return; }
       if (this._leaving) { return; }
       this._leaving = true;
-      this.stopPoll();
-      this.cancelVisual();
       if (this.isEco()) { router.back(); return; }
       var that = this;
       var t0 = Date.now();
@@ -390,7 +323,6 @@
       step();
     },
     setByY(y) {
-      this.cancelVisual();
       var v = (TOP + HEIGHT - y) / HEIGHT * 255;
       if (v < 0) { v = 0; }
       if (v > 255) { v = 255; }
@@ -495,7 +427,7 @@
               if (v > 255) { v = 255; }
               if (Math.abs(v - target) <= 2) {
                 that.val = v;
-                that.fillH = HEIGHT * v / 255;
+                that.fillH = that.showFill ? HEIGHT * v / 255 : 0;
                 that.msg = '';
                 return;
               }
@@ -511,7 +443,7 @@
                 }
               } else {
                 that.val = v;
-                that.fillH = HEIGHT * v / 255;
+                that.fillH = that.showFill ? HEIGHT * v / 255 : 0;
                 that.msg = '亮度未生效';
               }
             },
