@@ -14,7 +14,7 @@
           <text class="rb" style="color: #6EE7D8;">r</text>
         </div>
         <text class="intro">点到哪里，亮到哪里</text>
-        <text class="ver">版本 1.7.4</text>
+        <text class="ver">版本 1.8.0</text>
         <image class="appIcon" src="/common/images/logo.png"></image>
       </div>
       <text class="h2" style="top: 286px;">开发组</text>
@@ -122,11 +122,30 @@
     private: {
       shift: 336
     },
+    getS() {
+      try {
+        var d = this.$app.$def.data;
+        if (!d.lantern) {
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
+        }
+        return d.lantern;
+      } catch (e) {
+        return { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
+      }
+    },
+    isEco() {
+      var S = this.getS();
+      return S && S.ecoMode === true;
+    },
     onInit() {
       this._sx = 0;
       this._sy = 0;
       this._leaving = false;
       var that = this;
+      if (this.isEco()) {
+        this.shift = 0;
+        return;
+      }
       setTimeout(function () {
         var t0 = Date.now();
         var step = function () {
@@ -142,7 +161,8 @@
       this._settled = false;
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
-      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+      var ecoNow = this.isEco();
+      this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
     },
     onBackPress() {
       if (!this._settled) { return true; }
@@ -181,6 +201,7 @@
     backAnimated() {
       if (!this._settled) { return; }
       if (this._leaving) { return; }
+      if (this.isEco()) { router.back(); return; }
       this._leaving = true;
       var that = this;
       var t0 = Date.now();

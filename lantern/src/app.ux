@@ -5,7 +5,10 @@ export default {
       lockColor: false,
       keepOn: true,
       lastHue: 0,
-      pendingColor: ''
+      pendingColor: '',
+      autoMaxBright: true,
+      autoColorLock: true,
+      ecoMode: false
     }
   },
   onCreate() {

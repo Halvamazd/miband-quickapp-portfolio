@@ -147,9 +147,13 @@
       this._drag = false;
       this._leaving = false;
       var that = this;
-      setTimeout(function () {
-        that.slideIn();
-      }, 30);
+      if (this.isEco()) {
+        this.shift = 0;
+      } else {
+        setTimeout(function () {
+          that.slideIn();
+        }, 30);
+      }
     },
     slideIn() {
       var that = this;
@@ -161,6 +165,21 @@
         if (p < 1) { that._inT = setTimeout(step, 16); }
       };
       step();
+    },
+    getS() {
+      try {
+        var d = this.$app.$def.data;
+        if (!d.lantern) {
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
+        }
+        return d.lantern;
+      } catch (e) {
+        return { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
+      }
+    },
+    isEco() {
+      var S = this.getS();
+      return S && S.ecoMode === true;
     },
     syncCurrent() {
       var that = this;
@@ -210,7 +229,8 @@
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
       try { if (this._syncT) { clearTimeout(this._syncT); } } catch (e1) {}
-      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+      var ecoNow = this.isEco();
+      this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
       setTimeout(function () { that0.syncCurrent(); }, 40);
     },
     onBackPress() {
@@ -265,6 +285,7 @@
     backAnimated() {
       if (!this._settled) { return; }
       if (this._leaving) { return; }
+      if (this.isEco()) { router.back(); return; }
       this._leaving = true;
       var that = this;
       var t0 = Date.now();
@@ -295,15 +316,27 @@
     },
     apply() {
       var that = this;
-      var setV = function () {
+      var target = this.val;
+      var write = function (attempt) {
         try {
           brightness.setValue({
-            value: that.val,
-            success: function () { that.msg = ''; },
+            value: target,
+            success: function () { that.verify(target, attempt); },
             fail: function () { that.msg = '亮度接口不可用'; }
           });
         } catch (e) {
           that.msg = '亮度接口不可用';
+        }
+      };
+      var manual = function () {
+        try {
+          brightness.setMode({
+            mode: 0,
+            success: function () { setTimeout(function () { write(0); }, 120); },
+            fail: function () { write(0); }
+          });
+        } catch (e) {
+          write(0);
         }
       };
       try {
@@ -311,20 +344,71 @@
           success: function (res) {
             var m = res && res.mode;
             if (m === 0) {
-              setV();
+              write(0);
             } else {
-              brightness.setMode({
-                mode: 0,
-                success: function () { setTimeout(setV, 30); },
-                fail: setV
-              });
+              manual();
             }
           },
-          fail: setV
+          fail: manual
         });
       } catch (e) {
-        setV();
+        manual();
       }
+    },
+    verify(target, attempt) {
+      var that = this;
+      setTimeout(function () {
+        try {
+          brightness.getValue({
+            success: function (res) {
+              if (that._drag) { return; }
+              var raw = res && res.value;
+              if (raw === undefined || raw === null || raw === '') { return; }
+              var v = Number(raw);
+              if (!isFinite(v)) { return; }
+              v = Math.round(v);
+              if (v < 0) { v = 0; }
+              if (v > 255) { v = 255; }
+              if (Math.abs(v - target) <= 2) {
+                that.val = v;
+                that.fillH = HEIGHT * v / 255;
+                that.msg = '';
+                return;
+              }
+              if (attempt < 1) {
+                try {
+                  brightness.setValue({
+                    value: target,
+                    success: function () { that.verify(target, attempt + 1); },
+                    fail: function () { that.msg = '亮度未生效'; }
+                  });
+                } catch (e) {
+                  that.msg = '亮度未生效';
+                }
+              } else {
+                that.val = v;
+                that.fillH = HEIGHT * v / 255;
+                that.msg = '亮度未生效';
+              }
+            },
+            fail: function () {
+              if (attempt < 1) {
+                try {
+                  brightness.setValue({
+                    value: target,
+                    success: function () { that.verify(target, attempt + 1); },
+                    fail: function () { that.msg = '亮度未生效'; }
+                  });
+                } catch (e) {
+                  that.msg = '亮度未生效';
+                }
+              } else {
+                that.msg = '亮度未生效';
+              }
+            }
+          });
+        } catch (e) {}
+      }, 220);
     }
   };
 </script>

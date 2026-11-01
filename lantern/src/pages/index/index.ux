@@ -103,24 +103,27 @@
       this._lpFired = false;
       this._moved = false;
       this._lock = false;
-      this._local = { lockColor: false, keepOn: true, pendingColor: '' };
+      this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
     },
     getS() {
       try {
         var d = this.$app.$def.data;
         if (!d.lantern) {
-          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
         }
         return d.lantern;
       } catch (e) {
         return this._local;
       }
     },
+    isEco() {
+      var S = this.getS();
+      return S && S.ecoMode === true;
+    },
     onShow() {
       this._settled = false;
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
-      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
       this._navLock = false;
       this._lpFired = false;
       this._moved = false;
@@ -128,6 +131,8 @@
       this.ballOn = false;
       this.maskOn = false;
       var S = this.getS();
+      var ecoNow = S.ecoMode === true;
+      this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
       this._lock = S.lockColor;
       var that = this;
       if (S.keepOn) {
@@ -136,7 +141,7 @@
       if (S.pendingColor) {
         var c = S.pendingColor;
         S.pendingColor = '';
-        setTimeout(function () { that.paint(168, 208, c); }, 60);
+        setTimeout(function () { that.paint(168, 208, c); }, ecoNow ? 0 : 60);
       }
     },
     onHide() {
@@ -204,6 +209,10 @@
       this.showHint = false;
       try { vibrator.vibrate({ mode: 'short' }); } catch (v) {}
       var that = this;
+      if (this.isEco()) {
+        router.push({ uri: '/pages/settings' });
+        return;
+      }
       if (this.bgColor === '#000000') {
         router.push({ uri: '/pages/settings' });
         return;
@@ -250,6 +259,45 @@
         this.ballOn = false;
       } catch (e) {}
     },
+    boostBrightness() {
+      var S = this.getS();
+      if (S.autoMaxBright === false) { return; }
+      var now = Date.now();
+      if (this._lastBoost && now - this._lastBoost < 1200) { return; }
+      this._lastBoost = now;
+      var setMax = function () {
+        try {
+          brightness.setValue({
+            value: 255,
+            success: function () {},
+            fail: function () {}
+          });
+        } catch (e) {}
+      };
+      try {
+        brightness.getMode({
+          success: function (res) {
+            var m = res && res.mode;
+            if (m === 0) {
+              setMax();
+            } else {
+              try {
+                brightness.setMode({
+                  mode: 0,
+                  success: function () { setTimeout(setMax, 100); },
+                  fail: setMax
+                });
+              } catch (e) {
+                setMax();
+              }
+            }
+          },
+          fail: setMax
+        });
+      } catch (e) {
+        setMax();
+      }
+    },
     tap(x, y, forced) {
       try {
         if (this._playing) { return; }
@@ -268,6 +316,15 @@
         this.showHint = false;
         if (typeof x !== 'number') { x = 168; }
         if (typeof y !== 'number') { y = 208; }
+        if (this.isEco()) {
+          this.finishNow();
+          this.bgColor = color;
+          this.ballOn = false;
+          this._playing = false;
+          this.boostBrightness();
+          return;
+        }
+        this.boostBrightness();
         var rMax = Math.min(Math.sqrt(Math.max(
           x * x + y * y,
           (SCREEN_W - x) * (SCREEN_W - x) + y * y,

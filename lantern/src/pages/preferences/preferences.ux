@@ -1,0 +1,287 @@
+<template>
+  <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
+    <div class="titleBar" style="left: {{titleX}}px; top: 40px;">
+      <div class="titleInner"><text class="title">偏好设置</text></div>
+    </div>
+    <div class="row" style="left: {{x0}}px; top: 118px;" onclick="toggleMax">
+      <div class="rowInner">
+        <text class="rowLabel">自动最高亮度</text>
+        <div class="track" style="background-color: {{maxBg}};"><div class="dot" style="left: {{maxDotX}}px;"></div></div>
+      </div>
+    </div>
+    <div class="row" style="left: {{x1}}px; top: 186px;" onclick="toggleAutoLock">
+      <div class="rowInner">
+        <text class="rowLabel">自动颜色锁定</text>
+        <div class="track" style="background-color: {{autoBg}};"><div class="dot" style="left: {{autoDotX}}px;"></div></div>
+      </div>
+    </div>
+    <div class="row" style="left: {{x2}}px; top: 254px;" onclick="toggleEco">
+      <div class="rowInner">
+        <text class="rowLabel">节能模式</text>
+        <div class="track" style="background-color: {{ecoBg}};"><div class="dot" style="left: {{ecoDotX}}px;"></div></div>
+      </div>
+    </div>
+    <text class="note">设置仅本次运行有效</text>
+  </div>
+</template>
+
+<style>
+  .root {
+    width: 336px;
+    height: 480px;
+    position: relative;
+    background-color: #000000;
+    overflow: hidden;
+  }
+  .titleBar {
+    position: absolute;
+    width: 336px;
+    height: 44px;
+  }
+  .titleInner {
+    width: 336px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+  .title {
+    color: #ffffff;
+    font-size: 30px;
+  }
+  .row {
+    position: absolute;
+    width: 336px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+  }
+  .rowInner {
+    width: 292px;
+    height: 56px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rowLabel {
+    color: #ffffff;
+    font-size: 27px;
+  }
+  .track {
+    position: relative;
+    width: 68px;
+    height: 36px;
+    border-radius: 18px;
+  }
+  .dot {
+    position: absolute;
+    top: 3px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    background-color: #ffffff;
+  }
+  .note {
+    position: absolute;
+    left: 0;
+    top: 430px;
+    width: 336px;
+    text-align: center;
+    color: #6f6f6f;
+    font-size: 15px;
+  }
+</style>
+
+<script>
+  import router from '@system.router';
+  function easeOut(t) {
+    var u = 1 - t;
+    return 1 - u * u * u;
+  }
+  export default {
+    private: {
+      titleX: -336,
+      x0: 336,
+      x1: 336,
+      x2: 336,
+      maxOn: true,
+      maxBg: '#34C759',
+      maxDotX: 35,
+      autoLockOn: true,
+      autoBg: '#34C759',
+      autoDotX: 35,
+      ecoOn: false,
+      ecoBg: '#4A4A4A',
+      ecoDotX: 3
+    },
+    onInit() {
+      this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
+      this._nav = false;
+      this._leaving = false;
+      this._animDone = false;
+      this._firstShow = true;
+      this._settled = false;
+      this.syncState();
+      var that = this;
+      if (this.isEco()) {
+        this.finishListAnim();
+      } else {
+        setTimeout(function () { that.startList(); }, 30);
+      }
+    },
+    onShow() {
+      this._settled = false;
+      var that0 = this;
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      var ecoNow = this.isEco();
+      this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
+      this._nav = false;
+      this._leaving = false;
+      this.syncState();
+      if (this._firstShow) { this._firstShow = false; } else { this.finishListAnim(); }
+    },
+    onHide() {
+      try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
+      this.finishListAnim();
+    },
+    getS() {
+      try {
+        var d = this.$app.$def.data;
+        if (!d.lantern) {
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
+        }
+        return d.lantern;
+      } catch (e) {
+        return this._local;
+      }
+    },
+    isEco() {
+      var S = this.getS();
+      return S && S.ecoMode === true;
+    },
+    syncState() {
+      var S = this.getS();
+      this.maxOn = S.autoMaxBright !== false;
+      this.maxBg = this.maxOn ? '#34C759' : '#4A4A4A';
+      this.maxDotX = this.maxOn ? 35 : 3;
+      this.autoLockOn = S.autoColorLock !== false;
+      this.autoBg = this.autoLockOn ? '#34C759' : '#4A4A4A';
+      this.autoDotX = this.autoLockOn ? 35 : 3;
+      this.ecoOn = S.ecoMode === true;
+      this.ecoBg = this.ecoOn ? '#34C759' : '#4A4A4A';
+      this.ecoDotX = this.ecoOn ? 35 : 3;
+    },
+    finishListAnim() {
+      try { if (this._listT) { clearTimeout(this._listT); this._listT = null; } } catch (e) {}
+      this.titleX = 0;
+      this.x0 = 0;
+      this.x1 = 0;
+      this.x2 = 0;
+      this._animDone = true;
+    },
+    onBackPress() {
+      if (!this._settled) { return true; }
+      if (!this._animDone) { this.finishListAnim(); }
+      this.backAnimated();
+      return true;
+    },
+    onTouchStart(e) {
+      if (!this._settled) { return; }
+      var p = this.getPoint(e);
+      this._sx = p.clientX;
+      this._sy = p.clientY;
+    },
+    onTouchEnd(e) {
+      if (!this._settled) { return; }
+      var p = this.getPoint(e);
+      var dx = p.clientX - this._sx;
+      var dy = Math.abs(p.clientY - this._sy);
+      if (dx > 65 && dy < 90) {
+        this.backAnimated();
+      }
+    },
+    getPoint(e) {
+      try {
+        if (e && e.touches && e.touches.length > 0) { return e.touches[0]; }
+        if (e && e.changedTouches && e.changedTouches.length > 0) { return e.changedTouches[0]; }
+        if (e && typeof e.clientX === 'number') { return e; }
+      } catch (err) {}
+      return { clientX: 168, clientY: 240 };
+    },
+    startList() {
+      var that = this;
+      this.titleX = -336;
+      this.x0 = 336;
+      this.x1 = 336;
+      this.x2 = 336;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var t = Date.now() - t0;
+          var all = true;
+          var tp = t / 320;
+          if (tp > 1) { tp = 1; }
+          that.titleX = -336 * (1 - easeOut(tp));
+          if (tp < 1) { all = false; }
+          var starts = [120, 180, 240];
+          for (var i = 0; i < 3; i++) {
+            var p = (t - starts[i]) / 280;
+            if (p < 0) { p = 0; }
+            if (p > 1) { p = 1; }
+            var x = 336 * (1 - easeOut(p));
+            if (i === 0) { that.x0 = x; }
+            if (i === 1) { that.x1 = x; }
+            if (i === 2) { that.x2 = x; }
+            if (p < 1) { all = false; }
+          }
+          if (!all) { that._listT = setTimeout(step, 16); } else { that._animDone = true; }
+        } catch (e) {}
+      };
+      step();
+    },
+    backAnimated() {
+      if (!this._animDone) { this.finishListAnim(); }
+      if (this._leaving) { return; }
+      if (this.isEco()) { router.back(); return; }
+      this._leaving = true;
+      var that = this;
+      var t0 = Date.now();
+      var step = function () {
+        try {
+          var p = (Date.now() - t0) / 280;
+          if (p > 1) { p = 1; }
+          var e = easeOut(p);
+          that.titleX = -336 * e;
+          that.x0 = 336 * e;
+          that.x1 = 336 * e;
+          that.x2 = 336 * e;
+          if (p < 1) {
+            that._backT = setTimeout(step, 16);
+          } else {
+            router.back();
+          }
+        } catch (err) {
+          router.back();
+        }
+      };
+      step();
+    },
+    toggleMax() {
+      var S = this.getS();
+      var cur = S.autoMaxBright !== false;
+      S.autoMaxBright = !cur;
+      this.syncState();
+    },
+    toggleAutoLock() {
+      var S = this.getS();
+      var cur = S.autoColorLock !== false;
+      S.autoColorLock = !cur;
+      this.syncState();
+    },
+    toggleEco() {
+      var S = this.getS();
+      var cur = S.ecoMode === true;
+      S.ecoMode = !cur;
+      this.syncState();
+    }
+  };
+</script>

@@ -118,25 +118,34 @@
       ty: 208
     },
     onInit() {
-      this._local = { lastHue: 0, pendingColor: '' };
+      this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
       this._drag = false;
       this._done = false;
       var that = this;
-      setTimeout(function () {
-        that.slideIn();
-        that.setHue(that.getS().lastHue || 0);
-      }, 30);
+      if (this.isEco()) {
+        this.shift = 0;
+        this.setHue(this.getS().lastHue || 0);
+      } else {
+        setTimeout(function () {
+          that.slideIn();
+          that.setHue(that.getS().lastHue || 0);
+        }, 30);
+      }
     },
     getS() {
       try {
         var d = this.$app.$def.data;
         if (!d.lantern) {
-          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
         }
         return d.lantern;
       } catch (e) {
         return this._local;
       }
+    },
+    isEco() {
+      var S = this.getS();
+      return S && S.ecoMode === true;
     },
     slideIn() {
       var that = this;
@@ -153,7 +162,8 @@
       this._settled = false;
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
-      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+      var ecoNow = this.isEco();
+      this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
     },
     onBackPress() {
       // 完全拦截系统返回，只允许底部“返回”按钮离开
@@ -211,6 +221,7 @@
     },
     back() {
       if (this._done) { return; }
+      if (this.isEco()) { this._done = true; router.back(); return; }
       this._done = true;
       var that = this;
       var t0 = Date.now();
@@ -231,7 +242,7 @@
       this._done = true;
       try { vibrator.vibrate({ mode: 'short' }); } catch (e) {}
       var S = this.getS();
-      S.lockColor = true;
+      S.lockColor = (S.autoColorLock !== false);
       S.pendingColor = this.color;
       router.push({ uri: '/pages/index' });
     }

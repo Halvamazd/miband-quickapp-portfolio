@@ -1,27 +1,30 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
-    <div class="titleBar" style="left: {{titleX}}px; top: 44px;">
+    <div class="titleBar" style="left: {{titleX}}px; top: 40px;">
       <div class="titleInner"><text class="title">设置</text></div>
     </div>
-    <div class="row" style="left: {{x0}}px; top: 108px;" onclick="goColor">
+    <div class="row" style="left: {{x0}}px; top: 100px;" onclick="goColor">
       <div class="rowInner"><text class="rowLabel">自定义颜色</text><text class="rowArrow">›</text></div>
     </div>
-    <div class="row" style="left: {{x1}}px; top: 172px;" onclick="toggleLock">
+    <div class="row" style="left: {{x1}}px; top: 158px;" onclick="toggleLock">
       <div class="rowInner">
         <text class="rowLabel">锁定当前颜色</text>
         <div class="track" style="background-color: {{lockBg}};"><div class="dot" style="left: {{lockDotX}}px;"></div></div>
       </div>
     </div>
-    <div class="row" style="left: {{x2}}px; top: 236px;" onclick="goBright">
+    <div class="row" style="left: {{x2}}px; top: 216px;" onclick="goBright">
       <div class="rowInner"><text class="rowLabel">屏幕亮度</text><text class="rowArrow">›</text></div>
     </div>
-    <div class="row" style="left: {{x3}}px; top: 300px;" onclick="toggleKeep">
+    <div class="row" style="left: {{x3}}px; top: 274px;" onclick="toggleKeep">
       <div class="rowInner">
         <text class="rowLabel">屏幕常亮</text>
         <div class="track" style="background-color: {{swBg}};"><div class="dot" style="left: {{swDotX}}px;"></div></div>
       </div>
     </div>
-    <div class="row" style="left: {{x4}}px; top: 364px;" onclick="goAbout">
+    <div class="row" style="left: {{x4}}px; top: 332px;" onclick="goPrefs">
+      <div class="rowInner"><text class="rowLabel">偏好设置</text><text class="rowArrow">›</text></div>
+    </div>
+    <div class="row" style="left: {{x5}}px; top: 390px;" onclick="goAbout">
       <div class="rowInner"><text class="rowLabel">关于</text><text class="rowArrow">›</text></div>
     </div>
     <text if="{{msg}}" class="msg">{{msg}}</text>
@@ -53,13 +56,13 @@
   .row {
     position: absolute;
     width: 336px;
-    height: 58px;
+    height: 56px;
     align-items: center;
     justify-content: center;
   }
   .rowInner {
     width: 292px;
-    height: 58px;
+    height: 56px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -89,7 +92,7 @@
   .msg {
     position: absolute;
     left: 0;
-    top: 432px;
+    top: 454px;
     width: 336px;
     text-align: center;
     color: #ff6b6b;
@@ -114,6 +117,7 @@
       x2: 336,
       x3: 336,
       x4: 336,
+      x5: 336,
       lockOn: false,
       lockBg: '#4A4A4A',
       lockDotX: 3,
@@ -123,7 +127,7 @@
       msg: ''
     },
     onInit() {
-      this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+      this._local = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
       this._nav = false;
       this._leaving = false;
       this._animDone = false;
@@ -131,13 +135,18 @@
       this._settled = false;
       this.syncState();
       var that = this;
-      setTimeout(function () { that.startList(); }, 30);
+      if (this.isEco()) {
+        this.finishListAnim();
+      } else {
+        setTimeout(function () { that.startList(); }, 30);
+      }
     },
     onShow() {
       this._settled = false;
       var that0 = this;
       try { if (this._settleT) { clearTimeout(this._settleT); } } catch (e0) {}
-      this._settleT = setTimeout(function () { that0._settled = true; }, 380);
+      var ecoNow = this.isEco();
+      this._settleT = setTimeout(function () { that0._settled = true; }, ecoNow ? 0 : 380);
       this._nav = false;
       this._leaving = false;
       this.syncState();
@@ -155,6 +164,7 @@
       this.x2 = 0;
       this.x3 = 0;
       this.x4 = 0;
+      this.x5 = 0;
       this._animDone = true;
     },
     onBackPress() {
@@ -167,12 +177,16 @@
       try {
         var d = this.$app.$def.data;
         if (!d.lantern) {
-          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '' };
+          d.lantern = { lockColor: false, keepOn: true, lastHue: 0, pendingColor: '', autoMaxBright: true, autoColorLock: true, ecoMode: false };
         }
         return d.lantern;
       } catch (e) {
         return this._local;
       }
+    },
+    isEco() {
+      var S = this.getS();
+      return S && S.ecoMode === true;
     },
     syncState() {
       var S = this.getS();
@@ -213,6 +227,7 @@
       this.x2 = 336;
       this.x3 = 336;
       this.x4 = 336;
+      this.x5 = 336;
       var t0 = Date.now();
       var step = function () {
         try {
@@ -222,8 +237,8 @@
           if (tp > 1) { tp = 1; }
           that.titleX = -336 * (1 - easeOut(tp));
           if (tp < 1) { all = false; }
-          var starts = [140, 200, 260, 320, 380];
-          for (var i = 0; i < 5; i++) {
+          var starts = [120, 175, 230, 285, 340, 395];
+          for (var i = 0; i < 6; i++) {
             var p = (t - starts[i]) / 280;
             if (p < 0) { p = 0; }
             if (p > 1) { p = 1; }
@@ -233,6 +248,7 @@
             if (i === 2) { that.x2 = x; }
             if (i === 3) { that.x3 = x; }
             if (i === 4) { that.x4 = x; }
+            if (i === 5) { that.x5 = x; }
             if (p < 1) { all = false; }
           }
           if (!all) { that._listT = setTimeout(step, 16); } else { that._animDone = true; }
@@ -243,6 +259,7 @@
     backAnimated() {
       if (!this._animDone) { this.finishListAnim(); }
       if (this._leaving) { return; }
+      if (this.isEco()) { router.back(); return; }
       this._leaving = true;
       var that = this;
       var t0 = Date.now();
@@ -257,6 +274,7 @@
           that.x2 = 336 * e;
           that.x3 = 336 * e;
           that.x4 = 336 * e;
+          that.x5 = 336 * e;
           if (p < 1) {
             that._backT = setTimeout(step, 16);
           } else {
@@ -281,6 +299,13 @@
       if (this._nav) { return; }
       this._nav = true;
       router.push({ uri: '/pages/brightness' });
+    },
+    goPrefs() {
+      if (!this._settled) { return; }
+      if (!this._animDone) { this.finishListAnim(); }
+      if (this._nav) { return; }
+      this._nav = true;
+      router.push({ uri: '/pages/preferences' });
     },
     goAbout() {
       if (!this._settled) { return; }
