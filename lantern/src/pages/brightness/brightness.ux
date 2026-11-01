@@ -1,9 +1,9 @@
 <template>
   <div class="root" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
     <div class="wrap" style="left: {{shift}}px;">
-      <text class="title">屏幕亮度</text>
+      <text class="title">{{titleText}}</text>
       <div class="barZone">
-        <div class="bar">
+        <div class="bar" style="opacity: {{barOpacity}};">
           <div class="fill" style="height: {{fillH}}px;"></div>
           <div class="sun">
             <div class="core"></div>
@@ -136,7 +136,9 @@
       shift: 336,
       val: 200,
       fillH: 259,
-      msg: ''
+      msg: '',
+      titleText: '屏幕亮度',
+      barOpacity: 1
     },
     onInit() {
       this._sx = 0;
@@ -183,6 +185,11 @@
     isEco() {
       var S = this.getS();
       return S && S.ecoMode === true;
+    },
+    setModeLabel(auto) {
+      this.autoMode = auto === true;
+      this.titleText = auto ? '屏幕亮度 · 自动' : '屏幕亮度 · 手动';
+      this.barOpacity = auto ? 0.65 : 1;
     },
     cancelVisual() {
       try {
@@ -255,7 +262,7 @@
         brightness.getMode({
           success: function (res) {
             var m = res && res.mode;
-            that.autoMode = (m === 1);
+            that.setModeLabel(m === 1);
             read();
           },
           fail: read
@@ -404,9 +411,10 @@
       this._manualPending = true;
       this._manualCb = cb;
       var that = this;
-      var done = function () {
+      var done = function (ok) {
         that._manualPending = false;
-        that._manualReady = true;
+        that._manualReady = (ok === true);
+        if (ok === true) { that.setModeLabel(false); }
         var f = that._manualCb;
         that._manualCb = null;
         if (f) { f(); }
@@ -416,23 +424,23 @@
           success: function (res) {
             var m = res && res.mode;
             if (m === 0) {
-              done();
+              done(true);
             } else {
               try {
                 brightness.setMode({
                   mode: 0,
-                  success: done,
-                  fail: done
+                  success: function () { done(true); },
+                  fail: function () { done(false); }
                 });
               } catch (e) {
-                done();
+                done(false);
               }
             }
           },
-          fail: done
+          fail: function () { done(false); }
         });
       } catch (e) {
-        done();
+        done(false);
       }
     },
     liveApply(force) {
