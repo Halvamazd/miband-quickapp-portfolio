@@ -2,8 +2,8 @@
   <div class="root" ontouchstart="onTouchStart" ontouchmove="onTouchMove" ontouchend="onTouchEnd">
     <div class="wrap" style="left: {{shift}}px;">
       <text class="title">{{titleText}}</text>
-      <div class="barZone">
-        <div class="bar" style="opacity: {{barOpacity}};">
+      <div class="barZone" if="{{showBar}}">
+        <div class="bar">
           <div class="fill" style="height: {{fillH}}px;"></div>
           <div class="sun">
             <div class="core"></div>
@@ -138,7 +138,7 @@
       fillH: 259,
       msg: '',
       titleText: '屏幕亮度',
-      barOpacity: 1
+      showBar: true
     },
     onInit() {
       this._sx = 0;
@@ -189,7 +189,7 @@
     setModeLabel(auto) {
       this.autoMode = auto === true;
       this.titleText = auto ? '屏幕亮度 · 自动' : '屏幕亮度 · 手动';
-      this.barOpacity = auto ? 0.65 : 1;
+      this.showBar = auto !== true;
     },
     cancelVisual() {
       try {
@@ -325,7 +325,7 @@
       } catch (e) {}
     },
     onTouchStart(e) {
-      if (!this._settled) { return; }
+      if (!this._settled || !this.showBar) { return; }
       var p = this.getPoint(e);
       this._sx = p.clientX;
       this._sy = p.clientY;
